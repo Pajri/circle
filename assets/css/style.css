@@ -1,0 +1,19 @@
+.login{
+    margin : 0px auto;
+    width: 18rem;
+    align-self: center;
+}
+
+.login .card-title{
+    text-align: center;
+}
+
+.login .input-group{
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+.login .error{
+    font-size: 0.9rem;
+    text-align: center;
+}
