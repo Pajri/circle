@@ -89,3 +89,9 @@
     font-size: 0.8rem;
 }
 /* END Answer Card */
+
+/* BEGIN Discussion*/
+.answer-form .btn.answer {
+    font-size : 0.9rem;
+}
+/* END Discussion*/
