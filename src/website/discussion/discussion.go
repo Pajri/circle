@@ -7,10 +7,11 @@ import (
 	utils "../../utils"
 )
 
-var discussionTemplate = template.Must(template.ParseFiles(utils.WebsiteDirectory() + "/discussion/discussion.html"))
+var discussionTemplate = template.Must(template.ParseFiles(utils.WebsiteDirectory()+"/discussion/discussion.html",
+	utils.WebsiteDirectory()+"/layout/main.html"))
 
 func LoadDiscussion(w http.ResponseWriter) error {
-	err := discussionTemplate.ExecuteTemplate(w, "discussion.html", nil)
+	err := discussionTemplate.ExecuteTemplate(w, "main.html", nil)
 	if err != nil {
 		return err
 	}

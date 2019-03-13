@@ -8,10 +8,11 @@ import (
 )
 
 //template used in home
-var homeTemplates = template.Must(template.ParseFiles(utils.WebsiteDirectory() + "/home/home.html"))
+var homeTemplates = template.Must(template.ParseFiles(utils.WebsiteDirectory()+"/home/home.html",
+	utils.WebsiteDirectory()+"/layout/main.html"))
 
 func LoadHome(w http.ResponseWriter) error {
-	err := homeTemplates.ExecuteTemplate(w, "home.html", nil)
+	err := homeTemplates.ExecuteTemplate(w, "main.html", nil)
 	if err != nil {
 		return err
 	}

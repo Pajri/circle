@@ -1,0 +1,46 @@
+<html>
+
+<head>
+    <title>Circle | #ChangeThis</title>
+    <link rel="stylesheet" href="/assets/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="/assets/css/style.css" />
+    <link rel="stylesheet" href="/assets/css/fontawesome.all.css" />
+</head>
+
+<body>
+    <!-- Navbar taken from https://getbootstrap.com/docs/4.0/examples/navbars/ (modified)-->
+    <nav class="navbar navbar-expand-md navbar-dark bg-dark fixed-top">
+        <a class="navbar-brand" href="#">Circle</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarsExample04"
+            aria-controls="navbarsExample04" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarsExample04">
+            <form class="input-group my-2 my-md-0 search-bar">
+                <input class="form-control" type="text" placeholder="Search">
+                <div class="input-group-append">
+                    <div class="input-group-text"><span class="fas fa-search"></span></div>
+                </div>
+            </form>
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item highlighted">
+                    <a class="nav-link" href="#">Ask Question</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">Profile</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">Logout</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    {{template "content"}}
+
+    <script src="/assets/js/jquery-3.3.1.slim.min.js" type="text/javascript"></script>
+    <script src="/assets/js/bootstrap.min.js" type="text/javascript"></script>
+</body>
+
+</html>
