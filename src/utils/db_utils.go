@@ -12,7 +12,7 @@ func ConfigDB(ctx context.Context) (*mongo.Database, error) {
 	username := ""
 	password := ""
 	host := ""
-	database := ""
+	database := "circle"
 
 	uri := fmt.Sprintf("mongodb:%s://%s@%s/%s", username, password, host, database)
 

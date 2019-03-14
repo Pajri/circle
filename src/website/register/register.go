@@ -23,15 +23,19 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 
-		db := utils.ConfigDB(ctx)
+		db, err := utils.ConfigDB(ctx)
+		if err != nil {
+			fmt.Errorf("Register: en error occured on config db: %v", err)
+		}
+
 		user := datamodel.User{
 			Username: r.FormValue("username"),
 			Email:    r.FormValue("email"),
 			Password: r.FormValue("password"),
 		}
-		err := register(ctx, db, user)
+		err = register(ctx, db, user)
 		if err != nil {
-			return "", fmt.Errorf("Register: User couldn't be created: %v", err)
+			fmt.Errorf("Register: User couldn't be created: %v", err)
 		}
 	}
 
@@ -41,12 +45,12 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func register(ctx context.Context, db *mongo.Database, user datamodel.User) err {
+func register(ctx context.Context, db *mongo.Database, user datamodel.User) error {
 
-	_, err := db.Collection(datamodel.User.CollName()).InsertOne(ctx, bson.D{
-		{datamodel.User.UsernameColl(), user.Username},
-		{datamodel.User.EmailColl(), user.Email},
-		{datamodel.User.PasswordColl(), user.Password},
+	_, err := db.Collection(user.CollName()).InsertOne(ctx, bson.D{
+		{user.UsernameColl(), user.Username},
+		{user.EmailColl(), user.Email},
+		{user.PasswordColl(), user.Password},
 	})
 
 	return err
