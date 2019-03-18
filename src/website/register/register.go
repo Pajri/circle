@@ -19,7 +19,7 @@ import (
 var ctx context.Context
 var db *mongo.Database
 
-type RegsiterViewModel struct {
+type RegisterViewModel struct {
 	IsError      bool
 	ErrorMessage string
 }
@@ -31,11 +31,13 @@ var registerTemplate = template.Must(template.ParseFiles(utils.WebsiteDirectory(
 func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	err := Init()
 
-	if r.Method == "Post" {
-		registerViewModel := RegisterViewModel{
-			IsError:      false,
-			ErrorMessage: "",
-		}
+	RegisterData := RegisterViewModel{
+		IsError:      false,
+		ErrorMessage: "",
+	}
+
+	if r.Method == "POST" {
+		
 
 		taken, takenErr := isUserTaken(r.FormValue("username"))
 		if takenErr != nil {
@@ -45,14 +47,13 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		if !taken {
 			err = register(w, r)
 		} else {
-			registerViewModel.IsError = true
-			registerViewModel.ErrorMessage = "Username is already taken"
+			RegisterData.IsError = true
+			RegisterData.ErrorMessage = "Username is already taken"
 		}
+	} 
 
-		err = registerTemplate.ExecuteTemplate(w, "authentication.html", registerViewModel)
-	} else {
-		err = registerTemplate.ExecuteTemplate(w, "authentication.html", nil)
-	}
+	fmt.Println(RegisterData)
+	err = registerTemplate.ExecuteTemplate(w, "authentication.html", &RegisterData)
 
 	if err != nil {
 		log.Print("Register : ", err)
@@ -78,6 +79,7 @@ func register(w http.ResponseWriter, r *http.Request) error {
 		return nil
 	}
 
+	var err error
 	user := populateUser(r)
 	if err != nil {
 		return err
