@@ -58,7 +58,7 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	} 
 
-	err = registerTemplate.ExecuteTemplate(w, "authentication.html", &RegisterData)
+	err = registerTemplate.ExecuteTemplate(w, "authentication.html", RegisterData)
 
 	if err != nil {
 		log.Print("Register : ", err)

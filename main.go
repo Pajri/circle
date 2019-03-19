@@ -7,6 +7,7 @@ import (
 	discussion "./src/website/discussion"
 	home "./src/website/home"
 	register "./src/website/register"
+	login "./src/website/login"
 )
 
 func homeHandler(w http.ResponseWriter, r *http.Request) {
@@ -24,6 +25,8 @@ func main() {
 	http.HandleFunc("/", homeHandler)
 	http.HandleFunc("/register", register.RegisterHandler)
 	http.HandleFunc("/discussion", discussionHandler)
+	http.HandleFunc("/login", login.LoginHandler)
+
 
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
