@@ -38,26 +38,32 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == "POST" {
 		
+		var taken, passSame bool
+		taken, err = isUserTaken(r.FormValue("username"))
+		passSame = isPasswordSame(r)
 
-		taken, takenErr := isUserTaken(r.FormValue("username"))
-		if takenErr != nil {
-			err = takenErr
-		}
-
-		if !taken {
+		if !taken && passSame {
 			err = register(w, r)
+			if err == nil {
+				http.Redirect(w,r,"/login?register=success",302)
+			}
 		} else {
-			RegisterData.IsError = true
-			RegisterData.ErrorMessage = "Username is already taken"
+			if taken {
+				RegisterData.IsError = true
+				RegisterData.ErrorMessage = "Username is already taken"
+			}else if !passSame{
+				RegisterData.IsError = true
+				RegisterData.ErrorMessage = "Password does not match"
+			}
 		}
 	} 
 
-	fmt.Println(RegisterData)
 	err = registerTemplate.ExecuteTemplate(w, "authentication.html", &RegisterData)
 
 	if err != nil {
 		log.Print("Register : ", err)
 	}
+	
 }
 
 func Init() error {
@@ -104,6 +110,13 @@ func isUserTaken(username string) (bool, error) {
 	}
 
 	return userFound.Next(ctx), nil
+}
+
+func isPasswordSame(r *http.Request) bool {
+	if r.FormValue("password") == r.FormValue("confirm_password"){
+		return true
+	}
+	return false	
 }
 
 func insertUser(user datamodel.User) error {

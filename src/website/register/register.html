@@ -34,7 +34,7 @@
 
                     {{if .IsError}}
                     <div class="alert alert-danger error" role="alert">
-                        Username has already been taken
+                        {{.ErrorMessage}}
                     </div>
                     {{end}}
                     
