@@ -8,13 +8,28 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func ConfigDB(ctx context.Context) (*mongo.Database, error) {
-	username := ""
-	password := ""
-	host := ""
-	database := "circle"
+type DbUtil struct {
+	username string
+	password string
+	host     string
+	database string
+	context  context.Context
+}
 
-	uri := fmt.Sprintf("mongodb:%s://%s@%s/%s", username, password, host, database)
+func (db DbUtil) createURI() string {
+	db = DbUtil{
+		username: "",
+		password: "",
+		host:     "",
+		database: "circle",
+	}
+
+	uri := fmt.Sprintf("mongodb:%s://%s@%s/%s", db.username, db.password, db.host, db.database)
+	return uri
+}
+
+func (db DbUtil) Connect(ctx context.Context) (*mongo.Database, error) {
+	uri := db.createURI()
 
 	client, err := mongo.NewClient(options.Client().ApplyURI(uri))
 	if err != nil {
@@ -26,5 +41,5 @@ func ConfigDB(ctx context.Context) (*mongo.Database, error) {
 		return nil, fmt.Errorf("db utils: mongo client couldn't connect with background context: %v", err)
 	}
 
-	return client.Database(database), nil
+	return client.Database(db.database), nil
 }

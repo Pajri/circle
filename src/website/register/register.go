@@ -2,7 +2,6 @@ package register
 
 import (
 	"context"
-	"crypto/sha1"
 	"fmt"
 	"html/template"
 	"log"
@@ -37,7 +36,7 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.Method == "POST" {
-		
+
 		var taken, passSame bool
 		taken, err = isUserTaken(r.FormValue("username"))
 		passSame = isPasswordSame(r)
@@ -45,25 +44,25 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		if !taken && passSame {
 			err = register(w, r)
 			if err == nil {
-				http.Redirect(w,r,"/login?register=success",302)
+				http.Redirect(w, r, "/login?register=success", 302)
 			}
 		} else {
 			if taken {
 				RegisterData.IsError = true
 				RegisterData.ErrorMessage = "Username is already taken"
-			}else if !passSame{
+			} else if !passSame {
 				RegisterData.IsError = true
 				RegisterData.ErrorMessage = "Password does not match"
 			}
 		}
-	} 
+	}
 
 	err = registerTemplate.ExecuteTemplate(w, "authentication.html", RegisterData)
 
 	if err != nil {
 		log.Print("Register : ", err)
 	}
-	
+
 }
 
 func Init() error {
@@ -113,10 +112,10 @@ func isUserTaken(username string) (bool, error) {
 }
 
 func isPasswordSame(r *http.Request) bool {
-	if r.FormValue("password") == r.FormValue("confirm_password"){
+	if r.FormValue("password") == r.FormValue("confirm_password") {
 		return true
 	}
-	return false	
+	return false
 }
 
 func insertUser(user datamodel.User) error {
@@ -133,14 +132,8 @@ func populateUser(r *http.Request) datamodel.User {
 	user := datamodel.User{
 		Username: r.FormValue("username"),
 		Email:    r.FormValue("email"),
-		Password: hashSha1(r.FormValue("password")),
+		Password: utils.HashSha1(r.FormValue("password")),
 	}
 
 	return user
-}
-
-func hashSha1(text string) string {
-	h := sha1.New()
-	h.Write(([]byte(text)))
-	return string(h.Sum(nil))
 }
