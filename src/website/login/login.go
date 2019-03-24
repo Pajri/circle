@@ -101,10 +101,6 @@ func authenticate(login datamodel.User) (bool, error) {
 
 }
 
-func getSingleUser(){
-	
-}
-
 func createSuccessMessage(msg string) Message{
 	return Message{
 		Display : true,
