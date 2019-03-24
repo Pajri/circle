@@ -5,17 +5,18 @@
                 <h5 class="card-title">Login</h5>
                 
                 <p class="card-text">
+                    <form action="/login" method="POST">
                     <div class="input-group">
                         <div class="input-group-prepend">
                             <div class="input-group-text"><span class="fas fa-user"></span></div>
                         </div>
-                        <input type="text" class="form-control" id="inlineFormInputGroupUsername" placeholder="Username">
+                        <input type="text" class="form-control" name="username" placeholder="Username">
                     </div>
                     <div class="input-group">
                         <div class="input-group-prepend">
                             <div class="input-group-text"><span class="fas fa-unlock"></span></div>
                         </div>
-                        <input type="text" class="form-control" id="inlineFormInputGroupUsername" placeholder="Password">
+                        <input type="password" class="form-control" name="password" placeholder="Password">
                     </div>
                     {{if .Display}}
                         {{$alert := ""}}
@@ -29,7 +30,8 @@
                             {{.Text}}
                         </div>
                     {{end}}
-                    <button type="button" class="btn btn-dark float-right">Login</button>
+                    <button type="submit" class="btn btn-dark float-right">Login</button>
+                    </form>
                 </p>
             </div>
         </div>

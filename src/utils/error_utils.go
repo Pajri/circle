@@ -1,17 +1,15 @@
 package utils
 
-type Error struct {
-	LogErrorMessage    string
-	ClientErrorMessage string
-}
+import (
+	"html/template"
+	"fmt"
+	"net/http"
+)
 
-func (err Error) NewError(_error error, _clientErrorMessage string) *Error {
-	return &Error{
-		LogErrorMessage:    _error.Error(),
-		ClientErrorMessage: _clientErrorMessage,
-	}
-}
+func InternalServerErrorHandler(w http.ResponseWriter, r *http.Request, err error, msg string){
+	fmt.Println(fmt.Errorf(msg))
+	fmt.Println(fmt.Errorf("%v",err))
 
-func (err *Error) Error() string {
-	return err.LogErrorMessage
+	errTmpl := template.Must(template.ParseFiles(WebsiteDirectory()+"/error_pages/500.html"))
+	errTmpl.Execute(w, nil)
 }

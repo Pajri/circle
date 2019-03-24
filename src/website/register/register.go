@@ -2,7 +2,6 @@ package register
 
 import (
 	"context"
-	"crypto/sha1"
 	"fmt"
 	"html/template"
 	"log"
@@ -72,7 +71,7 @@ func Init() error {
 	ctx = context.TODO()
 
 	//INIT DATABASE
-	dbInit, err := utils.ConfigDB(ctx)
+	dbInit, err := utils.ConnectDb(ctx)
 	if err != nil {
 		return fmt.Errorf("An error occured on config db: %v", err)
 	}
@@ -133,14 +132,8 @@ func populateUser(r *http.Request) datamodel.User {
 	user := datamodel.User{
 		Username: r.FormValue("username"),
 		Email:    r.FormValue("email"),
-		Password: hashSha1(r.FormValue("password")),
+		Password: utils.HashSha1(r.FormValue("password")),
 	}
 
 	return user
-}
-
-func hashSha1(text string) string {
-	h := sha1.New()
-	h.Write(([]byte(text)))
-	return string(h.Sum(nil))
 }

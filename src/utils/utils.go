@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"crypto/sha1"
 	"log"
 	"os"
 	"strings"
@@ -20,3 +21,10 @@ func WorkingDirectory() string {
 func WebsiteDirectory() string {
 	return WorkingDirectory() + "/src/website"
 }
+
+func HashSha1(text string) string {
+	h := sha1.New()
+	h.Write(([]byte(text)))
+	return string(h.Sum(nil))
+}
+
