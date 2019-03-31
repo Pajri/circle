@@ -10,10 +10,6 @@ import (
 	login "./src/website/login"
 )
 
-func homeHandler(w http.ResponseWriter, r *http.Request) {
-	home.LoadHome(w)
-}
-
 func discussionHandler(w http.ResponseWriter, r *http.Request) {
 	discussion.LoadDiscussion(w)
 }
@@ -22,7 +18,7 @@ func main() {
 	assetsDir := http.FileServer(http.Dir("assets"))
 	http.Handle("/assets/", http.StripPrefix("/assets/", assetsDir))
 
-	http.HandleFunc("/", homeHandler)
+	http.HandleFunc("/", home.HomeHandler)
 	http.HandleFunc("/register", register.RegisterHandler)
 	http.HandleFunc("/discussion", discussionHandler)
 	http.HandleFunc("/login", login.LoginHandler)

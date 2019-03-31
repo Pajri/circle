@@ -13,3 +13,8 @@ func InternalServerErrorHandler(w http.ResponseWriter, r *http.Request, err erro
 	errTmpl := template.Must(template.ParseFiles(WebsiteDirectory()+"/error_pages/500.html"))
 	errTmpl.Execute(w, nil)
 }
+
+func ForbiddenHandler(w http.ResponseWriter, r *http.Request){
+	errTmpl := template.Must(template.ParseFiles(WebsiteDirectory()+"/error_pages/403.html"))
+	errTmpl.Execute(w, nil)
+}

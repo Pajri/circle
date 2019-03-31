@@ -61,11 +61,23 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 		if isAuth {
 			http.Redirect(w,r,"/home",http.StatusTemporaryRedirect)
+			session, err := utils.GetSession(r,utils.SESSION_AUTH)
+			if err != nil {
+				utils.InternalServerErrorHandler(w,r,err,"login : an error occured when retrieving sessions.")
+				return
+			}
+
+			session.Values[utils.KEY_USERNAME] = login.Username
+			session.Values[utils.KEY_ISAUTH] = true
+			err = session.Save(r,w)
+			if err != nil {
+				utils.InternalServerErrorHandler(w,r,err,"login : an error occured when executing template.")
+			}
 		}else{
 			LoginMessage = createErrorMessage("Invalid username or password")
 		}
 	}
-		
+	
 	err = loginTemplate.ExecuteTemplate(w, "authentication.html", LoginMessage)
 	if err != nil {
 		utils.InternalServerErrorHandler(w,r,err,"login : an error occured when executing template.")
