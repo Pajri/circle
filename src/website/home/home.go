@@ -1,6 +1,10 @@
 package home
 
 import (
+	"strings"
+	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"fmt"
 	"context"
 	"html/template"
 	"net/http"
@@ -22,6 +26,12 @@ var db *mongo.Database
 var ctx context.Context
 
 func HomeHandler(w http.ResponseWriter, r *http.Request) {
+	splitString := strings.Split(r.URL.Path,"/")
+	fmt.Println("split string : ",splitString)
+	if len(splitString) > 2 {
+		fmt.Println("page number :",splitString[3])
+	}
+	
 	var err error
 	var session *sessions.Session
 
@@ -66,7 +76,11 @@ func InitHome() error {
 }
 
 func ListQuestion() ([]*datamodel.Question, error) {
-	c, err := db.Collection(datamodel.CollQuestion).Find(ctx, bson.D{})
+	opt := options.Find()
+	opt.SetLimit(5)
+	opt.SetSort(bson.D{{datamodel.FieldQuestionCreatedDate, -1}})
+	
+	c, err := db.Collection(datamodel.CollQuestion).Find(ctx, bson.D{},opt)
 	if err != nil {
 		return nil, err
 	}
@@ -85,10 +99,12 @@ func ListQuestion() ([]*datamodel.Question, error) {
 		m := doc.Map()
 
 		question.Title = m[question.TitleColl()].(string)
-		question.Description = m[question.DescriptionColl()].(string)
+		question.Description = m[question.DescriptionColl()].(string)[:100]+"..."
 		question.Vote = int(m[question.VoteColl()].(float64))
 		question.IsSolved = m[question.IsSolvedColl()].(bool)
 		question.Username = m[question.UsernameColl()].(string)
+
+		fmt.Println("DateTime : ", m[question.CreatedDateColl()].(primitive.DateTime))
 
 		questions = append(questions, question)
 	}

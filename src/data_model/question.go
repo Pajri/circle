@@ -1,7 +1,11 @@
 package datamodel
 
-var CollQuestion = "question"
+import (
+	"time"
+)
 
+var CollQuestion = "question"
+var FieldQuestionCreatedDate = "createdDate"
 type Question struct {
 	ID          string `json:_id`
 	Title       string `json:title`
@@ -9,6 +13,7 @@ type Question struct {
 	Vote        int    `json:vote`
 	IsSolved    bool   `json:isSolved`
 	Username    string `json:username`
+	CreatedDate time.Time `json:createdDate`
 }
 
 func (question Question) IDColl() string {
@@ -33,4 +38,8 @@ func (question Question) IsSolvedColl() string {
 
 func (question Question) UsernameColl() string {
 	return "username"
+}
+
+func (question Question) CreatedDateColl() string {
+	return "createdDate"
 }
