@@ -1,16 +1,18 @@
 package datamodel
 
+var CollQuestion = "question"
+
 type Question struct {
-	ID       string `json:_id`
-	Title string `json:title`
-	Description    string `json:description`
-	Vote    int `json:vote`
-	IsSolved bool `json:isSolved`
-	Username string `json:username`
+	ID          string `json:_id`
+	Title       string `json:title`
+	Description string `json:description`
+	Vote        int    `json:vote`
+	IsSolved    bool   `json:isSolved`
+	Username    string `json:username`
 }
 
-func (question Question) CollName() string {
-	return "user"
+func (question Question) IDColl() string {
+	return "_id"
 }
 
 func (question Question) TitleColl() string {
