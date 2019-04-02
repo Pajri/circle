@@ -1,7 +1,7 @@
 {{define "content"}}
 
 <div class="container">
-    {{range .}}
+    {{range .Questions}}
     <div class="card my-2 question">
         <div class="card-body">
             <div class="row">
@@ -27,5 +27,18 @@
         </div>
     </div>
     {{end}}
+
+    <div class="text-xs-center">
+        <ul class="pagination">
+        {{range .PageIndex}}
+            {{if eq . .CurrentPage}}
+            <li class="page-item-active"><a class="page-link" href="/home/page/{{.}}">{{.}}</a></li>
+            {{else}}
+            <li class="page-item"><a class="page-link" href="/home/page/{{.}}">{{.}}</a></li>
+            {{end}}
+            
+        {{end}}
+        </ul>
+    </div>
 </div>
 {{end}}
