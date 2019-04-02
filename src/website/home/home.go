@@ -80,13 +80,11 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 
 	count := int64(0)
 	count, err = db.Collection(datamodel.CollQuestion).CountDocuments(ctx, bson.D{}, nil)
-	fmt.Println("count : ", count)
 	if err != nil {
 		utils.InternalServerErrorHandler(w, r, err, "home : an error occured when counting documents")
 		return
 	}
 	pagesCount := int(math.Ceil(float64(count) / 5))
-	fmt.Println("pages count : ", pagesCount)
 	homeViewModel.PageIndex = make([]int, pagesCount)
 	for i := 0; i < int(pagesCount); i++ {
 		homeViewModel.PageIndex[i] = i + 1

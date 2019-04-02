@@ -28,17 +28,16 @@
     </div>
     {{end}}
 
-    <div class="text-xs-center">
-        <ul class="pagination">
+    <ul class="pagination justify-content-center">
+        {{$cur := .CurrentPage}}
         {{range .PageIndex}}
-            {{if eq . .CurrentPage}}
-            <li class="page-item-active"><a class="page-link" href="/home/page/{{.}}">{{.}}</a></li>
+            {{if eq . $cur}}
+                <li class="page-item active"><a class="page-link" href="/home/page/{{.}}">{{.}}</a></li>
             {{else}}
-            <li class="page-item"><a class="page-link" href="/home/page/{{.}}">{{.}}</a></li>
+                <li class="page-item"><a class="page-link" href="/home/page/{{.}}">{{.}}</a></li>
             {{end}}
             
         {{end}}
-        </ul>
-    </div>
+    </ul>
 </div>
 {{end}}
