@@ -43,6 +43,11 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 		PageIndex:   nil,
 	}
 
+	val := r.FormValue("vote")
+	if val != "" {
+		fmt.Println("val : ", val)
+	}
+
 	//process session
 	session, err = utils.GetSession(r, utils.SESSION_AUTH)
 	if err != nil {
@@ -51,7 +56,7 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//init home
-	err = InitHome()
+	err = initHome()
 	if err != nil {
 		utils.InternalServerErrorHandler(w, r, err, "home : an error occured when executing templates")
 		return
@@ -90,7 +95,9 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 		homeViewModel.PageIndex[i] = i + 1
 	}
 
-	homeViewModel.Questions, err = ListQuestion(homeViewModel.CurrentPage)
+	vote(r)
+
+	homeViewModel.Questions, err = listQuestion(homeViewModel.CurrentPage)
 	if err != nil {
 		utils.InternalServerErrorHandler(w, r, err, "home : an error occured when load list question")
 		return
@@ -103,7 +110,7 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func InitHome() error {
+func initHome() error {
 	var err error
 
 	ctx := context.TODO()
@@ -111,7 +118,7 @@ func InitHome() error {
 	return err
 }
 
-func ListQuestion(page int) ([]*datamodel.Question, error) {
+func listQuestion(page int) ([]*datamodel.Question, error) {
 	if page > 0 {
 		page = page - 1
 	}
@@ -140,9 +147,10 @@ func ListQuestion(page int) ([]*datamodel.Question, error) {
 		c.Decode(doc)
 		m := doc.Map()
 
+		question.ID = m[datamodel.FieldQuestionID].(primitive.ObjectID).Hex()
 		question.Title = m[question.TitleColl()].(string)
 		question.Description = m[question.DescriptionColl()].(string)[:100] + "..."
-		question.Vote = int(m[question.VoteColl()].(float64))
+		question.Vote = int(m[question.VoteColl()].(int32))
 		question.IsSolved = m[question.IsSolvedColl()].(bool)
 		question.Username = m[question.UsernameColl()].(string)
 
@@ -152,4 +160,42 @@ func ListQuestion(page int) ([]*datamodel.Question, error) {
 	}
 
 	return questions, nil
+}
+
+func vote(r *http.Request) error {
+	var ok bool
+	var val []string
+	val, ok = r.URL.Query()["action"]
+	if !ok {
+		//action not passed, no voting
+		return nil
+	}
+	action := val[0]
+	var add int
+	if action == "upvote" {
+		add = 1
+	} else if action == "downvote" {
+		add = -1
+	}
+
+	//get id from querystring
+	val, ok = r.URL.Query()["id"]
+	id := val[0]
+	objId, _ := primitive.ObjectIDFromHex(id)
+	idDoc := bson.D{{"_id", objId}} //object id for filtering
+
+	var q datamodel.Question
+	proj := bson.D{{"vote", 1}} //projection : only show id and vote
+	err := db.Collection(datamodel.CollQuestion).FindOne(ctx, idDoc, options.FindOne().SetProjection(proj)).Decode(&q)
+	if err != nil {
+		return err
+	}
+
+	updateDoc := bson.D{{datamodel.FieldQuestionVote, q.Vote + add}} //update vote data
+	_, err = db.Collection(datamodel.CollQuestion).UpdateOne(ctx, idDoc, bson.D{{"$set", updateDoc}})
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

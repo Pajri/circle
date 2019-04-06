@@ -5,14 +5,17 @@ import (
 )
 
 var CollQuestion = "question"
+var FieldQuestionID = "_id"
 var FieldQuestionCreatedDate = "createdDate"
+var FieldQuestionVote = "vote"
+
 type Question struct {
-	ID          string `json:_id`
-	Title       string `json:title`
-	Description string `json:description`
-	Vote        int    `json:vote`
-	IsSolved    bool   `json:isSolved`
-	Username    string `json:username`
+	ID          string    `json:_id`
+	Title       string    `json:title`
+	Description string    `json:description`
+	Vote        int       `json:vote`
+	IsSolved    bool      `json:isSolved`
+	Username    string    `json:username`
 	CreatedDate time.Time `json:createdDate`
 }
 

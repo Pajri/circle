@@ -1,23 +1,24 @@
 /* BEGIN Login */
-.login{
-    margin : 0px auto;
+.login {
+    margin: 0px auto;
     width: 18rem;
     align-self: center;
 }
 
-.login .card-title{
+.login .card-title {
     text-align: center;
 }
 
-.login .input-group{
+.login .input-group {
     margin-top: 10px;
     margin-bottom: 10px;
 }
 
-.login .message{
+.login .message {
     font-size: 0.9rem;
     text-align: center;
 }
+
 /* END Login */
 
 /* BEGIN Navbar */
@@ -26,25 +27,27 @@
     padding: 0px 17px;
 }
 
-.navbar .navbar-nav .nav-item{
+.navbar .navbar-nav .nav-item {
     white-space: nowrap;
 }
 
-.navbar .navbar-nav .highlighted{
+.navbar .navbar-nav .highlighted {
     background-color: orange;
     border-radius: .25rem;
     font-weight: bold;
 }
 
-.navbar .navbar-nav .highlighted a{
+.navbar .navbar-nav .highlighted a {
     color: white;
 }
+
 /* END Navbar */
 
 /* BEGIN Container*/
 .container {
     margin-top: 60px;
 }
+
 /* END Container */
 
 /* BEGIN Question Card*/
@@ -52,11 +55,11 @@
     font-size: 30px;
 }
 
-.question .left{
+.question .left {
     text-align: center;
 }
 
-.question .left p{
+.question .left p {
     margin-bottom: 0.3rem;
 }
 
@@ -68,30 +71,40 @@
     color: orange;
 }
 
-.question .vote .vote-button:hover{
-    color:orange;
+.question .vote a {
+    text-decoration: none;
+    color: black
+}
+
+.question .vote .vote-button:hover {
+    color: orange;
     cursor: pointer;
 }
+
 /* END Question Card */
 
 /* BEGIN Answer Card*/
-.answer.questioning{
+.answer.questioning {
     background-color: #e0e0e0;
 }
-.answer .left{
+
+.answer .left {
     text-align: center;
 }
+
 .answer .left img {
     width: 100%;
 }
 
-.answer .left a{
+.answer .left a {
     font-size: 0.8rem;
 }
+
 /* END Answer Card */
 
 /* BEGIN Discussion*/
 .answer-form .btn.answer {
-    font-size : 0.9rem;
+    font-size: 0.9rem;
 }
+
 /* END Discussion*/

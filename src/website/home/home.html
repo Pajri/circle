@@ -7,9 +7,9 @@
             <div class="row">
                 <div class="col-md-1 left">
                     <div class="vote">
-                        <div class="fas fa-chevron-up vote-button"></div>
+                        <a href="?action=upvote&id={{.ID}}"  class="fas fa-chevron-up vote-button"></a> 
                         <div>{{.Vote}}</div>
-                        <div class="fas fa-chevron-down vote-button"></div>
+                        <a href="?action=downvote&id={{.ID}}"  class="fas fa-chevron-down vote-button"></a> 
                     </div>
                     <p>2 Answers</p>
                     {{if .IsSolved}}
