@@ -197,5 +197,22 @@ func vote(r *http.Request) error {
 		return err
 	}
 
+	var session *sessions.Session
+	session, err = utils.GetSession(r, utils.SESSION_AUTH)
+	if err != nil {
+		return err
+	}
+	username := session.Values[utils.KEY_USERNAME].(string)
+	usnameDoc := bson.D{{datamodel.FieldUserUsername, username}}
+	var u datamodel.User
+	err = db.Collection(datamodel.CollUser).FindOne(ctx, usnameDoc).Decode(&u)
+
+	votedUpdate := bson.D{{datamodel.FieldQuestionVote, bson.A{idDoc}}}
+	_, err = db.Collection(datamodel.CollUser).UpdateOne(ctx, usnameDoc, bson.D{{"$set", votedUpdate}})
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+
 	return nil
 }

@@ -1,10 +1,14 @@
 package datamodel
 
+var CollUser = "user"
+var FieldUserUsername = "username"
+
 type User struct {
-	ID       string `json:_id`
-	Username string `json:username`
-	Email    string `json:email`
-	Password string `json:password`
+	ID       string   `json:_id`
+	Username string   `json:username`
+	Email    string   `json:email`
+	Password string   `json:password`
+	Votes    []string `json:votes`
 }
 
 func (user User) CollName() string {
