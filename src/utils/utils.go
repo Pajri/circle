@@ -5,6 +5,9 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func WorkingDirectory() string {
@@ -28,3 +31,6 @@ func HashSha1(text string) string {
 	return string(h.Sum(nil))
 }
 
+func UnixTimeToTime(u primitive.DateTime) time.Time {
+	return time.Unix(0, int64(u)*int64(time.Millisecond))
+}

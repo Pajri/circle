@@ -163,12 +163,12 @@ func listQuestion(page int, r *http.Request) ([]QuestionsView, error) {
 
 		var question datamodel.Question
 		question.ID = m[datamodel.FieldQuestionID].(primitive.ObjectID).Hex()
-		question.Title = m[question.TitleColl()].(string)
-		question.Description = m[question.DescriptionColl()].(string)[:100] + "..."
-		question.Vote = int(m[question.VoteColl()].(int32))
-		question.IsSolved = m[question.IsSolvedColl()].(bool)
-		question.Username = m[question.UsernameColl()].(string)
-		question.CreatedDate = unixTimeToTime(m[datamodel.FieldQuestionCreatedDate].(primitive.DateTime))
+		question.Title = m[datamodel.FieldQuestionTitle].(string)
+		question.Description = m[datamodel.FieldQuestionDescription].(string)[:100] + "..."
+		question.Vote = int(m[datamodel.FieldQuestionVote].(int32))
+		question.IsSolved = m[datamodel.FieldQuestionIsSolved].(bool)
+		question.Username = m[datamodel.FieldQuestionUsername].(string)
+		question.CreatedDate = utils.UnixTimeToTime(m[datamodel.FieldQuestionCreatedDate].(primitive.DateTime))
 
 		//check if user already voted or not
 		var voted = false
@@ -185,10 +185,6 @@ func listQuestion(page int, r *http.Request) ([]QuestionsView, error) {
 	}
 
 	return questions, nil
-}
-
-func unixTimeToTime(u primitive.DateTime) time.Time {
-	return time.Unix(0, int64(u)*int64(time.Millisecond))
 }
 
 func getUser(username string) (datamodel.User, error) {

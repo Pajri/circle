@@ -6,13 +6,9 @@ import (
 
 	discussion "./src/website/discussion"
 	home "./src/website/home"
-	register "./src/website/register"
 	login "./src/website/login"
+	register "./src/website/register"
 )
-
-func discussionHandler(w http.ResponseWriter, r *http.Request) {
-	discussion.LoadDiscussion(w)
-}
 
 func main() {
 	assetsDir := http.FileServer(http.Dir("assets"))
@@ -20,9 +16,8 @@ func main() {
 
 	http.HandleFunc("/", home.HomeHandler)
 	http.HandleFunc("/register", register.RegisterHandler)
-	http.HandleFunc("/discussion", discussionHandler)
+	http.HandleFunc("/discussion/", discussion.DiscussionHandler)
 	http.HandleFunc("/login", login.LoginHandler)
-
 
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
