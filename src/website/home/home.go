@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -21,8 +22,10 @@ import (
 	utils "../../utils"
 )
 
+var funcMap = template.FuncMap{"formatCreatedDate": formatCreatedDate}
+
 //template used in home
-var homeTemplates = template.Must(template.ParseFiles(utils.WebsiteDirectory()+"/home/home.html",
+var homeTemplates = template.Must(template.New("home.html").Funcs(funcMap).ParseFiles(utils.WebsiteDirectory()+"/home/home.html",
 	utils.WebsiteDirectory()+"/layout/main.html"))
 
 var db *mongo.Database
@@ -165,7 +168,7 @@ func listQuestion(page int, r *http.Request) ([]QuestionsView, error) {
 		question.Vote = int(m[question.VoteColl()].(int32))
 		question.IsSolved = m[question.IsSolvedColl()].(bool)
 		question.Username = m[question.UsernameColl()].(string)
-		fmt.Println("DateTime : ", m[question.CreatedDateColl()].(primitive.DateTime))
+		question.CreatedDate = unixTimeToTime(m[datamodel.FieldQuestionCreatedDate].(primitive.DateTime))
 
 		//check if user already voted or not
 		var voted = false
@@ -182,6 +185,10 @@ func listQuestion(page int, r *http.Request) ([]QuestionsView, error) {
 	}
 
 	return questions, nil
+}
+
+func unixTimeToTime(u primitive.DateTime) time.Time {
+	return time.Unix(0, int64(u)*int64(time.Millisecond))
 }
 
 func getUser(username string) (datamodel.User, error) {
@@ -299,4 +306,9 @@ func isVoted(id primitive.ObjectID, voteArr primitive.A) bool {
 		}
 	}
 	return false
+}
+
+func formatCreatedDate(t time.Time) string {
+	y, m, d := t.Date()
+	return fmt.Sprintf("%v %v %v", d, m, y)
 }

@@ -29,7 +29,10 @@
                 </div>
                 <div class="col-md-11 right">
                     <h5 class="card-title"><a href="#">{{.Question.Title}}</a></h5>
-                    <h6 class="card-subtitle mb-2 text-muted"><a href="#">{{.Question.Username}}</a></h6>
+                    <h6 class="card-subtitle mb-2 text-muted">
+                        <small>Posted at: {{.Question.CreatedDate | formatCreatedDate}}</small><br/>
+                        <a href="#">{{.Question.Username}}</a>
+                    </h6>
                     <p class="card-text">
                         {{.Question.Description}}
                     </p>
