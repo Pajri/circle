@@ -29,9 +29,14 @@ var db *mongo.Database
 var ctx context.Context
 
 type HomeViewModel struct {
-	Questions   []*datamodel.Question
+	Questions   []QuestionsView
 	CurrentPage int
 	PageIndex   []int
+}
+
+type QuestionsView struct {
+	Question datamodel.Question
+	IsVoted  bool
 }
 
 func HomeHandler(w http.ResponseWriter, r *http.Request) {
@@ -97,7 +102,7 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 
 	vote(r)
 
-	homeViewModel.Questions, err = listQuestion(homeViewModel.CurrentPage)
+	homeViewModel.Questions, err = listQuestion(homeViewModel.CurrentPage, r)
 	if err != nil {
 		utils.InternalServerErrorHandler(w, r, err, "home : an error occured when load list question")
 		return
@@ -118,7 +123,7 @@ func initHome() error {
 	return err
 }
 
-func listQuestion(page int) ([]*datamodel.Question, error) {
+func listQuestion(page int, r *http.Request) ([]QuestionsView, error) {
 	if page > 0 {
 		page = page - 1
 	}
@@ -135,31 +140,70 @@ func listQuestion(page int) ([]*datamodel.Question, error) {
 	}
 	defer c.Close(ctx)
 
-	var questions []*datamodel.Question
-	for c.Next(ctx) {
-		question := new(datamodel.Question)
-		// err = c.Decode(&question)
-		// if err != nil {
-		// 	return nil, err
-		// }
+	var username string
+	username, err = getUsernameFromSession(r)
+	if err != nil {
+		return nil, err
+	}
 
+	var usr datamodel.User
+	usr, err = getUser(username)
+	if err != nil {
+		return nil, err
+	}
+
+	var questions []QuestionsView
+	for c.Next(ctx) {
 		doc := &bson.D{}
 		c.Decode(doc)
 		m := doc.Map()
 
+		var question datamodel.Question
 		question.ID = m[datamodel.FieldQuestionID].(primitive.ObjectID).Hex()
 		question.Title = m[question.TitleColl()].(string)
 		question.Description = m[question.DescriptionColl()].(string)[:100] + "..."
 		question.Vote = int(m[question.VoteColl()].(int32))
 		question.IsSolved = m[question.IsSolvedColl()].(bool)
 		question.Username = m[question.UsernameColl()].(string)
-
 		fmt.Println("DateTime : ", m[question.CreatedDateColl()].(primitive.DateTime))
 
-		questions = append(questions, question)
+		//check if user already voted or not
+		var voted = false
+		if usr.Vote != nil {
+			qObjId := m[datamodel.FieldQuestionID].(primitive.ObjectID)
+			voted = isVoted(qObjId, usr.Vote)
+		}
+
+		q := QuestionsView{
+			Question: question,
+			IsVoted:  voted,
+		}
+		questions = append(questions, q)
 	}
 
 	return questions, nil
+}
+
+func getUser(username string) (datamodel.User, error) {
+	usnameDoc := bson.D{{datamodel.FieldUserUsername, username}}
+	usrDoc := bson.D{}
+	err := db.Collection(datamodel.CollUser).FindOne(ctx, usnameDoc).Decode(&usrDoc)
+	if err != nil {
+		return datamodel.User{}, err
+	}
+
+	m := usrDoc.Map()
+	var usr datamodel.User
+	usr.ID = m[datamodel.FieldUserID].(primitive.ObjectID).Hex()
+	usr.Username = m[datamodel.FieldUserUsername].(string)
+	usr.Email = m[datamodel.FieldUserEmail].(string)
+
+	if m[datamodel.FieldUserVote] != nil {
+		usr.Vote = m[datamodel.FieldUserVote].(primitive.A)
+	} else {
+		usr.Vote = nil
+	}
+	return usr, nil
 }
 
 func vote(r *http.Request) error {
@@ -180,9 +224,9 @@ func vote(r *http.Request) error {
 
 	//get id from querystring
 	val, ok = r.URL.Query()["id"]
-	id := val[0]
-	objId, _ := primitive.ObjectIDFromHex(id)
-	idDoc := bson.D{{"_id", objId}} //object id for filtering
+	questionId := val[0]
+	questionObjId, _ := primitive.ObjectIDFromHex(questionId)
+	idDoc := bson.D{{"_id", questionObjId}} //object id for filtering
 
 	var q datamodel.Question
 	proj := bson.D{{"vote", 1}} //projection : only show id and vote
@@ -197,17 +241,37 @@ func vote(r *http.Request) error {
 		return err
 	}
 
-	var session *sessions.Session
-	session, err = utils.GetSession(r, utils.SESSION_AUTH)
+	//add voted question to user
+	//get username from session
+	var username string
+	username, err = getUsernameFromSession(r)
 	if err != nil {
 		return err
 	}
-	username := session.Values[utils.KEY_USERNAME].(string)
-	usnameDoc := bson.D{{datamodel.FieldUserUsername, username}}
-	var u datamodel.User
-	err = db.Collection(datamodel.CollUser).FindOne(ctx, usnameDoc).Decode(&u)
 
-	votedUpdate := bson.D{{datamodel.FieldQuestionVote, bson.A{idDoc}}}
+	//get user from database
+	usnameDoc := bson.D{{datamodel.FieldUserUsername, username}} //username doc for filtering
+	usrDoc := bson.D{}
+	proj = bson.D{{datamodel.FieldUserVote, 1}} //show only id and vote
+	err = db.Collection(datamodel.CollUser).FindOne(ctx, usnameDoc, options.FindOne().SetProjection(proj)).Decode(&usrDoc)
+	if err != nil {
+		return err
+	}
+
+	//create vote array
+	m := usrDoc.Map()
+	var voteArray bson.A
+	if m[datamodel.FieldUserVote] != nil {
+		voteArray = m[datamodel.FieldUserVote].(bson.A)
+		if !isVoted(questionObjId, voteArray) {
+			voteArray = append(voteArray, questionObjId)
+		}
+	} else {
+		voteArray = bson.A{questionObjId}
+	}
+
+	//update vote
+	votedUpdate := bson.D{{datamodel.FieldQuestionVote, voteArray}}
 	_, err = db.Collection(datamodel.CollUser).UpdateOne(ctx, usnameDoc, bson.D{{"$set", votedUpdate}})
 	if err != nil {
 		fmt.Println(err)
@@ -215,4 +279,24 @@ func vote(r *http.Request) error {
 	}
 
 	return nil
+}
+
+func getUsernameFromSession(r *http.Request) (string, error) {
+	var session *sessions.Session
+	var err error
+	session, err = utils.GetSession(r, utils.SESSION_AUTH)
+	if err != nil {
+		return "", err
+	}
+	username := session.Values[utils.KEY_USERNAME].(string)
+	return username, nil
+}
+
+func isVoted(id primitive.ObjectID, voteArr primitive.A) bool {
+	for _, elmt := range voteArr {
+		if elmt == id {
+			return true
+		}
+	}
+	return false
 }

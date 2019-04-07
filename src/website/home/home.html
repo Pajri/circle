@@ -7,20 +7,31 @@
             <div class="row">
                 <div class="col-md-1 left">
                     <div class="vote">
-                        <a href="?action=upvote&id={{.ID}}"  class="fas fa-chevron-up vote-button"></a> 
-                        <div>{{.Vote}}</div>
-                        <a href="?action=downvote&id={{.ID}}"  class="fas fa-chevron-down vote-button"></a> 
+                        {{if .IsVoted}}
+                            <span class="fas fa-chevron-up disabled"></span> 
+                        {{else}}
+                            <a href="?action=upvote&id={{.Question.ID}}"  class="fas fa-chevron-up vote-button"></a>
+                        {{end}}
+                        
+                        <div>{{.Question.Vote}}</div>
+
+                        {{if .IsVoted}}
+                            <span class="fas fa-chevron-down disabled"></span> 
+                        {{else}}
+                            <a href="?action=downvote&id={{.Question.ID}}"  class="fas fa-chevron-down vote-button"></a> 
+                        {{end}}
+                        
                     </div>
                     <p>2 Answers</p>
-                    {{if .IsSolved}}
+                    {{if .Question.IsSolved}}
                         <p class="bg-success text-white">Solved</p>
                     {{end}}
                 </div>
                 <div class="col-md-11 right">
-                    <h5 class="card-title"><a href="#">{{.Title}}</a></h5>
-                    <h6 class="card-subtitle mb-2 text-muted"><a href="#">{{.Username}}</a></h6>
+                    <h5 class="card-title"><a href="#">{{.Question.Title}}</a></h5>
+                    <h6 class="card-subtitle mb-2 text-muted"><a href="#">{{.Question.Username}}</a></h6>
                     <p class="card-text">
-                        {{.Description}}
+                        {{.Question.Description}}
                     </p>
                 </div>
             </div>

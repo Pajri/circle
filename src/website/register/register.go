@@ -36,7 +36,7 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.Method == "POST" {
-		
+
 		var taken, passSame bool
 		taken, err = isUserTaken(r.FormValue("username"))
 		passSame = isPasswordSame(r)
@@ -44,25 +44,25 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		if !taken && passSame {
 			err = register(w, r)
 			if err == nil {
-				http.Redirect(w,r,"/login?register=success",302)
+				http.Redirect(w, r, "/login?register=success", 302)
 			}
 		} else {
 			if taken {
 				RegisterData.IsError = true
 				RegisterData.ErrorMessage = "Username is already taken"
-			}else if !passSame{
+			} else if !passSame {
 				RegisterData.IsError = true
 				RegisterData.ErrorMessage = "Password does not match"
 			}
 		}
-	} 
+	}
 
 	err = registerTemplate.ExecuteTemplate(w, "authentication.html", RegisterData)
 
 	if err != nil {
 		log.Print("Register : ", err)
 	}
-	
+
 }
 
 func Init() error {
@@ -99,10 +99,9 @@ func register(w http.ResponseWriter, r *http.Request) error {
 }
 
 func isUserTaken(username string) (bool, error) {
-	user := new(datamodel.User)
 	findOptions := options.Find()
 	findOptions = findOptions.SetLimit(1)
-	userFound, err := db.Collection(user.CollName()).Find(ctx, bson.D{{user.UsernameColl(), username}}, findOptions)
+	userFound, err := db.Collection(datamodel.CollUser).Find(ctx, bson.D{{datamodel.FieldUserUsername, username}}, findOptions)
 
 	if err != nil {
 		return false, fmt.Errorf("An error occured while checking user taken: %v", err)
@@ -112,17 +111,17 @@ func isUserTaken(username string) (bool, error) {
 }
 
 func isPasswordSame(r *http.Request) bool {
-	if r.FormValue("password") == r.FormValue("confirm_password"){
+	if r.FormValue("password") == r.FormValue("confirm_password") {
 		return true
 	}
-	return false	
+	return false
 }
 
 func insertUser(user datamodel.User) error {
-	_, err := db.Collection(user.CollName()).InsertOne(ctx, bson.D{
-		{user.UsernameColl(), user.Username},
-		{user.EmailColl(), user.Email},
-		{user.PasswordColl(), user.Password},
+	_, err := db.Collection(datamodel.CollUser).InsertOne(ctx, bson.D{
+		{datamodel.FieldUserUsername, user.Username},
+		{datamodel.FieldUserEmail, user.Email},
+		{datamodel.FieldPassword, user.Password},
 	})
 
 	return err

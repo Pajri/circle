@@ -71,6 +71,10 @@
     color: orange;
 }
 
+.question .vote .disabled {
+    color: lightgrey
+}
+
 .question .vote a {
     text-decoration: none;
     color: black
