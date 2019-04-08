@@ -2,6 +2,8 @@ package utils
 
 import (
 	"net/http"
+	"time"
+
 	"github.com/gorilla/sessions"
 )
 
@@ -12,17 +14,17 @@ var session *sessions.Session
 //session keys
 var SESSION_AUTH string = "session-auth"
 var KEY_USERNAME string = "username"
-var KEY_ISAUTH string= "is-auth"
+var KEY_ISAUTH string = "is-auth"
 
-func GetSession(r *http.Request, cookieName string) (*sessions.Session, error){
+func GetSession(r *http.Request, cookieName string) (*sessions.Session, error) {
 	if session != nil {
 		return session, nil
 	}
-
+	time.Now()
 	store.Options = &sessions.Options{
-		Path : "/",
+		Path: "/",
 	}
-	
+
 	var err error
 	session, err = store.Get(r, cookieName)
 	if err != nil {
@@ -32,7 +34,7 @@ func GetSession(r *http.Request, cookieName string) (*sessions.Session, error){
 	return session, nil
 }
 
-func IsLoggedInSession(session *sessions.Session) bool{
+func IsLoggedInSession(session *sessions.Session) bool {
 	isAuthenticated := session.Values[KEY_ISAUTH]
 	username := session.Values[KEY_USERNAME]
 
@@ -40,8 +42,19 @@ func IsLoggedInSession(session *sessions.Session) bool{
 		return false
 	}
 
-	if username.(string) != "" && isAuthenticated.(bool){
+	if username.(string) != "" && isAuthenticated.(bool) {
 		return true
 	}
 	return false
+}
+
+func GetUsernameFromSession(r *http.Request) (string, error) {
+	var session *sessions.Session
+	var err error
+	session, err = GetSession(r, SESSION_AUTH)
+	if err != nil {
+		return "", err
+	}
+	username := session.Values[KEY_USERNAME].(string)
+	return username, nil
 }

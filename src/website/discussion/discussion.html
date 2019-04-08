@@ -5,26 +5,30 @@
             <div class="row">
                 <div class="col-md-1 left">
                     <div class="vote">
-                        <div class="fas fa-chevron-up vote-button"></div>
-                        <div>24</div>
-                        <div class="fas fa-chevron-down vote-button"></div>
+                        {{if .IsVoted}}
+                            <span class="fas fa-chevron-up disabled"></span> 
+                        {{else}}
+                            <a href="?action=upvote&id={{.Question.ID}}"  class="fas fa-chevron-up vote-button"></a>
+                        {{end}}
+
+                        <div>{{.Question.Vote}}</div>
+
+                        {{if .IsVoted}}
+                            <span class="fas fa-chevron-down disabled"></span> 
+                        {{else}}
+                            <a href="?action=downvote&id={{.Question.ID}}"  class="fas fa-chevron-down vote-button"></a> 
+                        {{end}}
                     </div>
                     <p>2 Answers</p>
-                    <p class="bg-success text-white">Solved</p>
+                    {{if .Question.IsSolved}}
+                        <p class="bg-success text-white">Solved</p>
+                    {{end}}
                 </div>
                 <div class="col-md-11 right">
-                    <h5 class="card-title"><a href="#">Question Title</a></h5>
-                    <h6 class="card-subtitle mb-2 text-muted"><a href="#">Username</a></h6>
+                    <h5 class="card-title"><a href="#">{{.Question.Title}}</a></h5>
+                    <h6 class="card-subtitle mb-2 text-muted"><a href="#">{{.Question.Username}}</a></h6>
                     <p class="card-text">
-                        Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-                        Mauris convallis, dolor eu ultrices porta, dui mi ornare
-                        mauris, rutrum ultrices tellus nisl tincidunt arcu.
-                        Nam condimentum ac ex vitae varius. Sed augue eros,
-                        luctus non nisl vitae, bibendum suscipit erat.
-                        Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-                        Nullam a mi elementum justo luctus dignissim a et nisl.
-                        Proin rutrum justo est, nec pellentesque dui scelerisque
-                        vitae.
+                        {{.Question.Description}}
                     </p>
                 </div>
             </div>
@@ -33,10 +37,12 @@
     <div class="card my-2 bg-dark answer-form">
         <div class="card-body">
             <p class="card-text">
-                <div class="form-group">
-                    <textarea class="form-control" id="exampleFormControlTextarea1" rows="3"></textarea>
-                </div>
-                <button type="button" class="btn ml-auto answer">Answer</button>
+                <form action="/discussion/{{.Question.ID}}" method="POST">
+                    <div class="form-group">
+                        <textarea class="form-control" rows="3" name="answer"></textarea>
+                    </div>
+                    <button type="submit" class="btn ml-auto answer">Answer</button>
+                </form>
             </p>
         </div>
     </div>

@@ -144,7 +144,7 @@ func listQuestion(page int, r *http.Request) ([]QuestionsView, error) {
 	defer c.Close(ctx)
 
 	var username string
-	username, err = getUsernameFromSession(r)
+	username, err = utils.GetUsernameFromSession(r)
 	if err != nil {
 		return nil, err
 	}
@@ -165,7 +165,7 @@ func listQuestion(page int, r *http.Request) ([]QuestionsView, error) {
 		question.ID = m[datamodel.FieldQuestionID].(primitive.ObjectID).Hex()
 		question.Title = m[datamodel.FieldQuestionTitle].(string)
 		question.Description = m[datamodel.FieldQuestionDescription].(string)[:100] + "..."
-		question.Vote = int(m[datamodel.FieldQuestionVote].(int32))
+		question.Vote = m[datamodel.FieldQuestionVote].(int32)
 		question.IsSolved = m[datamodel.FieldQuestionIsSolved].(bool)
 		question.Username = m[datamodel.FieldQuestionUsername].(string)
 		question.CreatedDate = utils.UnixTimeToTime(m[datamodel.FieldQuestionCreatedDate].(primitive.DateTime))
@@ -218,7 +218,7 @@ func vote(r *http.Request) error {
 		return nil
 	}
 	action := val[0]
-	var add int
+	var add int32
 	if action == "upvote" {
 		add = 1
 	} else if action == "downvote" {
@@ -247,7 +247,7 @@ func vote(r *http.Request) error {
 	//add voted question to user
 	//get username from session
 	var username string
-	username, err = getUsernameFromSession(r)
+	username, err = utils.GetUsernameFromSession(r)
 	if err != nil {
 		return err
 	}
@@ -282,17 +282,6 @@ func vote(r *http.Request) error {
 	}
 
 	return nil
-}
-
-func getUsernameFromSession(r *http.Request) (string, error) {
-	var session *sessions.Session
-	var err error
-	session, err = utils.GetSession(r, utils.SESSION_AUTH)
-	if err != nil {
-		return "", err
-	}
-	username := session.Values[utils.KEY_USERNAME].(string)
-	return username, nil
 }
 
 func isVoted(id primitive.ObjectID, voteArr primitive.A) bool {
