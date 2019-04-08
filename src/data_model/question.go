@@ -8,10 +8,10 @@ var CollQuestion = "question"
 var FieldQuestionID = "_id"
 var FieldQuestionTitle = "title"
 var FieldQuestionDescription = "description"
+var FieldQuestionVote = "vote"
 var FieldQuestionIsSolved = "isSolved"
 var FieldQuestionUsername = "username"
 var FieldQuestionCreatedDate = "createdDate"
-var FieldQuestionVote = "vote"
 
 type Question struct {
 	ID          string
