@@ -34,3 +34,7 @@ func HashSha1(text string) string {
 func UnixTimeToTime(u primitive.DateTime) time.Time {
 	return time.Unix(0, int64(u)*int64(time.Millisecond))
 }
+
+func TimeToMillis(t time.Time) int64 {
+	return t.UnixNano() / int64(time.Millisecond)
+}

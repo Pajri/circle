@@ -105,28 +105,37 @@ func answer(r *http.Request, qId primitive.ObjectID) error {
 		return err
 	}
 
-	ansDoc := bson.D{
-		{datamodel.FieldQuestionUsername, usname},
-		{datamodel.FieldQuestionAnswer, ans},
-		{datamodel.FieldQuestionCreatedDate, primitive.DateTime(timeToMillis(time.Now()))}}
-	if q.Answer != nil {
-		q.Answer = append(q.Answer, ansDoc)
+	newAnsDoc := bson.D{
+		{datamodel.FieldAnswerID, primitive.NewObjectID()},
+		{datamodel.FieldAnswerAnswer, ans},
+		{datamodel.FieldAnswerUsername, usname},
+		{datamodel.FieldQuestionCreatedDate, primitive.DateTime(utils.TimeToMillis(time.Now()))}}
+
+	answersArr := bson.A{}
+	if q.Answers != nil {
+		//add answers
+		for _, ans := range q.Answers {
+			ansDoc := bson.D{
+				{datamodel.FieldAnswerID, ans.ID},
+				{datamodel.FieldAnswerAnswer, ans.Answer},
+				{datamodel.FieldAnswerUsername, ans.Username},
+				{datamodel.FieldAnswerCreatedDate, utils.TimeToMillis(ans.CreatedDate)},
+			}
+			answersArr = append(answersArr, ansDoc)
+		}
+		answersArr = append(answersArr, newAnsDoc)
 	} else {
-		q.Answer = bson.A{ansDoc}
+		answersArr = append(answersArr, newAnsDoc)
 	}
 
 	qIdDoc := bson.D{{datamodel.FieldQuestionID, qId}}
-	qUpdateDoc := bson.D{{datamodel.FieldQuestionAnswer, q.Answer}}
+	qUpdateDoc := bson.D{{datamodel.FieldQuestionAnswer, answersArr}}
 	_, err = db.Collection(datamodel.CollQuestion).UpdateOne(ctx, qIdDoc, bson.D{{"$set", qUpdateDoc}})
 	if err != nil {
 		return err
 	}
 
 	return nil
-}
-
-func timeToMillis(t time.Time) int64 {
-	return t.UnixNano() / int64(time.Millisecond)
 }
 
 func initDiscussion() error {
@@ -174,9 +183,17 @@ func getQuestion(id primitive.ObjectID) (datamodel.Question, error) {
 	q.CreatedDate = utils.UnixTimeToTime(qMap[datamodel.FieldQuestionCreatedDate].(primitive.DateTime))
 
 	if qMap[datamodel.FieldQuestionAnswer] != nil {
-		q.Answer = qMap[datamodel.FieldQuestionAnswer].(primitive.A)
+		for _, a := range q.Answers {
+			//var ans datamodel.Answer
+			fmt.Println(a)
+			// ans.ID = a[datamodel.FieldAnswerID].(primitive.ID)
+			// ans.Answer = a[datamodel.FieldAnswerAnswer].(string)
+			// ans.CreatedDate = utils.UnixTimeToTime(a[datamodel.FieldAnswerCreatedDate].(primitive.DateTime))
+
+			// q.Answers = append(q.Answers, ansMap)
+		}
 	} else {
-		q.Answer = nil
+		q.Answers = nil
 	}
 
 	return q, nil
@@ -224,7 +241,7 @@ func vote(r *http.Request) (bool, error) {
 	action := val[0]
 	var add int32
 	if action == "upvote" {
-		add = 1
+		add = 11
 	} else if action == "downvote" {
 		add = -1
 	}

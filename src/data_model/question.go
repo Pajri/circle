@@ -2,8 +2,6 @@ package datamodel
 
 import (
 	"time"
-
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 var CollQuestion = "question"
@@ -23,6 +21,6 @@ type Question struct {
 	Vote        int32
 	IsSolved    bool
 	Username    string
-	Answer      primitive.A
+	Answers     []Answer
 	CreatedDate time.Time
 }
