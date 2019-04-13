@@ -2,6 +2,7 @@ package utils
 
 import (
 	"crypto/sha1"
+	"fmt"
 	"log"
 	"os"
 	"strings"
@@ -37,4 +38,9 @@ func UnixTimeToTime(u primitive.DateTime) time.Time {
 
 func TimeToMillis(t time.Time) int64 {
 	return t.UnixNano() / int64(time.Millisecond)
+}
+
+func FormatCreatedDate(t time.Time) string {
+	y, m, d := t.Date()
+	return fmt.Sprintf("%v %v %v", d, m, y)
 }

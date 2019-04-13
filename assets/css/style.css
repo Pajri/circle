@@ -104,6 +104,22 @@
     font-size: 0.8rem;
 }
 
+.answer .left .btn-good-answer {
+    background: none;
+    border: 0px;
+    cursor: pointer;
+}
+
+.answer .left .good-answer {
+    background: green;
+    padding: 2px 0px;
+}
+
+.answer .left .btn-good-answer.selected {
+    color: white;
+    cursor: default;
+}
+
 /* END Answer Card */
 
 /* BEGIN Discussion*/

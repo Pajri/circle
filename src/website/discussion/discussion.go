@@ -18,41 +18,52 @@ import (
 	utils "../../utils"
 )
 
-var discussionTemplate = template.Must(template.ParseFiles(utils.WebsiteDirectory()+"/discussion/discussion.html",
+var funcMap = template.FuncMap{"formatCreatedDate": utils.FormatCreatedDate}
+var discussionTemplate = template.Must(template.New("discussion.html").Funcs(funcMap).ParseFiles(utils.WebsiteDirectory()+"/discussion/discussion.html",
 	utils.WebsiteDirectory()+"/layout/main.html"))
 var db *mongo.Database
 var ctx context.Context
+var questionId primitive.ObjectID
 
 type DiscussionView struct {
-	Question datamodel.Question
-	IsVoted  bool
+	Question                 datamodel.Question
+	IsVoted                  bool
+	NumOfAnswer              int
+	IsQuestionByLoggedInUser bool
 }
 
 func DiscussionHandler(w http.ResponseWriter, r *http.Request) {
-	err := initDiscussion()
-
-	var qId primitive.ObjectID
-	qId, err = getQuestionIdFromUrl(r)
+	err := initDiscussion(r)
 	if err != nil {
 		utils.InternalServerErrorHandler(w, r, err, "discussion : an error occured when retrieving question from url")
 		return
 	}
 
 	if r.Method == "POST" {
-		err = answer(r, qId)
+		err = answer(r)
 		if err != nil {
 			utils.InternalServerErrorHandler(w, r, err, "discussion : an error occured when answer")
+			return
+		}
+
+		err = setGoodAnswer(r)
+		if err != nil {
+			utils.InternalServerErrorHandler(w, r, err, "discussion : an error occured when set good answer")
 			return
 		}
 	}
 
 	var dView DiscussionView
-	dView.Question, err = getQuestion(qId)
+	dView.Question, err = getQuestion()
 	if err != nil {
 		utils.InternalServerErrorHandler(w, r, err, "discussion : an error occured when retrieving question")
 		return
 	}
 
+	dView.NumOfAnswer = 0
+	if dView.Question.Answers != nil {
+		dView.NumOfAnswer = len(dView.Question.Answers)
+	}
 	var voted = false
 	voted, err = vote(r)
 	if err != nil {
@@ -76,12 +87,24 @@ func DiscussionHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if usr.Vote != nil {
-			dView.IsVoted = isVoted(qId, usr.Vote)
+			dView.IsVoted = isVoted(usr.Vote)
 		} else {
 			dView.IsVoted = false
 		}
 	} else {
 		dView.IsVoted = voted
+	}
+
+	//should show solve button or not
+	var loggedInUser string
+	loggedInUser, err = utils.GetUsernameFromSession(r)
+	if err != nil {
+		utils.InternalServerErrorHandler(w, r, err, "discussion : an error occured when get username from session")
+		return
+	}
+	dView.IsQuestionByLoggedInUser = false
+	if loggedInUser == dView.Question.Username {
+		dView.IsQuestionByLoggedInUser = true
 	}
 
 	err = discussionTemplate.ExecuteTemplate(w, "main.html", dView)
@@ -92,15 +115,35 @@ func DiscussionHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func answer(r *http.Request, qId primitive.ObjectID) error {
+func initDiscussion(r *http.Request) error {
+	var err error
+
+	ctx := context.TODO()
+	db, err = utils.ConnectDb(ctx)
+	if err != nil {
+		return err
+	}
+
+	questionId, err = getQuestionIdFromUrl(r)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func answer(r *http.Request) error {
 	ans := r.FormValue("answer")
+	if ans == "" { //the post request is not for answering question
+		return nil
+	}
+
 	usname, err := utils.GetUsernameFromSession(r)
 	if err != nil {
 		return err
 	}
 
 	var q datamodel.Question
-	q, err = getQuestion(qId)
+	q, err = getQuestion()
 	if err != nil {
 		return err
 	}
@@ -115,11 +158,12 @@ func answer(r *http.Request, qId primitive.ObjectID) error {
 	if q.Answers != nil {
 		//add answers
 		for _, ans := range q.Answers {
+			ansObjID, _ := primitive.ObjectIDFromHex(ans.ID)
 			ansDoc := bson.D{
-				{datamodel.FieldAnswerID, ans.ID},
+				{datamodel.FieldAnswerID, ansObjID},
 				{datamodel.FieldAnswerAnswer, ans.Answer},
 				{datamodel.FieldAnswerUsername, ans.Username},
-				{datamodel.FieldAnswerCreatedDate, utils.TimeToMillis(ans.CreatedDate)},
+				{datamodel.FieldAnswerCreatedDate, primitive.DateTime(utils.TimeToMillis(ans.CreatedDate))},
 			}
 			answersArr = append(answersArr, ansDoc)
 		}
@@ -128,7 +172,7 @@ func answer(r *http.Request, qId primitive.ObjectID) error {
 		answersArr = append(answersArr, newAnsDoc)
 	}
 
-	qIdDoc := bson.D{{datamodel.FieldQuestionID, qId}}
+	qIdDoc := bson.D{{datamodel.FieldQuestionID, questionId}}
 	qUpdateDoc := bson.D{{datamodel.FieldQuestionAnswer, answersArr}}
 	_, err = db.Collection(datamodel.CollQuestion).UpdateOne(ctx, qIdDoc, bson.D{{"$set", qUpdateDoc}})
 	if err != nil {
@@ -136,14 +180,6 @@ func answer(r *http.Request, qId primitive.ObjectID) error {
 	}
 
 	return nil
-}
-
-func initDiscussion() error {
-	var err error
-
-	ctx := context.TODO()
-	db, err = utils.ConnectDb(ctx)
-	return err
 }
 
 func getQuestionIdFromUrl(r *http.Request) (primitive.ObjectID, error) {
@@ -164,9 +200,9 @@ func getQuestionIdFromUrl(r *http.Request) (primitive.ObjectID, error) {
 	return objId, nil
 }
 
-func getQuestion(id primitive.ObjectID) (datamodel.Question, error) {
+func getQuestion() (datamodel.Question, error) {
 	qDoc := bson.D{}
-	idDoc := bson.D{{datamodel.FieldQuestionID, id}}
+	idDoc := bson.D{{datamodel.FieldQuestionID, questionId}}
 	err := db.Collection(datamodel.CollQuestion).FindOne(ctx, idDoc).Decode(&qDoc)
 	if err != nil {
 		return datamodel.Question{}, err
@@ -183,14 +219,24 @@ func getQuestion(id primitive.ObjectID) (datamodel.Question, error) {
 	q.CreatedDate = utils.UnixTimeToTime(qMap[datamodel.FieldQuestionCreatedDate].(primitive.DateTime))
 
 	if qMap[datamodel.FieldQuestionAnswer] != nil {
-		for _, a := range q.Answers {
-			//var ans datamodel.Answer
-			fmt.Println(a)
-			// ans.ID = a[datamodel.FieldAnswerID].(primitive.ID)
-			// ans.Answer = a[datamodel.FieldAnswerAnswer].(string)
-			// ans.CreatedDate = utils.UnixTimeToTime(a[datamodel.FieldAnswerCreatedDate].(primitive.DateTime))
+		ansArr := qMap[datamodel.FieldQuestionAnswer].(primitive.A)
+		for _, a := range ansArr {
+			ansDoc := a.(primitive.D)
+			ansMap := ansDoc.Map()
 
-			// q.Answers = append(q.Answers, ansMap)
+			var ans datamodel.Answer
+			ans.ID = ansMap[datamodel.FieldAnswerID].(primitive.ObjectID).Hex()
+			ans.Answer = ansMap[datamodel.FieldAnswerAnswer].(string)
+			ans.Username = ansMap[datamodel.FieldAnswerUsername].(string)
+			ans.CreatedDate = utils.UnixTimeToTime(ansMap[datamodel.FieldAnswerCreatedDate].(primitive.DateTime))
+
+			if ansMap[datamodel.FieldAnswerIsGood] != nil {
+				ans.IsGood = ansMap[datamodel.FieldAnswerIsGood].(bool)
+			} else {
+				ans.IsGood = false
+			}
+
+			q.Answers = append(q.Answers, ans)
 		}
 	} else {
 		q.Answers = nil
@@ -221,9 +267,9 @@ func getUser(username string) (datamodel.User, error) {
 	return usr, nil
 }
 
-func isVoted(id primitive.ObjectID, voteArr primitive.A) bool {
+func isVoted(voteArr primitive.A) bool {
 	for _, elmt := range voteArr {
-		if elmt == id {
+		if elmt == questionId {
 			return true
 		}
 	}
@@ -287,7 +333,7 @@ func vote(r *http.Request) (bool, error) {
 	var voteArray bson.A
 	if m[datamodel.FieldUserVote] != nil {
 		voteArray = m[datamodel.FieldUserVote].(bson.A)
-		if !isVoted(questionObjId, voteArray) {
+		if !isVoted(voteArray) {
 			voteArray = append(voteArray, questionObjId)
 		}
 	} else {
@@ -303,4 +349,56 @@ func vote(r *http.Request) (bool, error) {
 	}
 
 	return true, nil
+}
+
+func setGoodAnswer(r *http.Request) error {
+	ansId := r.FormValue("good-answer")
+	if ansId == "" {
+		return nil
+	}
+
+	q, err := getQuestion()
+	if err != nil {
+		return err
+	}
+
+	actionTaken := 0
+	for i := 0; i < len(q.Answers); i++ {
+		if q.Answers[i].ID != ansId && q.Answers[i].IsGood {
+			q.Answers[i].IsGood = false
+			actionTaken++
+		}
+
+		if q.Answers[i].ID == ansId {
+			q.Answers[i].IsGood = true
+			actionTaken++
+		}
+
+		if actionTaken == 2 {
+			break
+		}
+	}
+
+	//create ans array
+	ansArr := bson.A{}
+	for _, elmt := range q.Answers {
+		ansId, _ := primitive.ObjectIDFromHex(elmt.ID)
+		ansDoc := bson.D{
+			{datamodel.FieldAnswerID, ansId},
+			{datamodel.FieldAnswerAnswer, elmt.Answer},
+			{datamodel.FieldAnswerUsername, elmt.Username},
+			{datamodel.FieldAnswerCreatedDate, primitive.DateTime(utils.TimeToMillis(elmt.CreatedDate))},
+			{datamodel.FieldAnswerIsGood, elmt.IsGood},
+		}
+		ansArr = append(ansArr, ansDoc)
+	}
+
+	qIdDoc := bson.D{{datamodel.FieldQuestionID, questionId}}
+	ansUpdateDoc := bson.D{{datamodel.FieldQuestionAnswer, ansArr}}
+	_, err = db.Collection(datamodel.CollQuestion).UpdateOne(ctx, qIdDoc, bson.D{{"$set", ansUpdateDoc}})
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

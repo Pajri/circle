@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -22,7 +21,7 @@ import (
 	utils "../../utils"
 )
 
-var funcMap = template.FuncMap{"formatCreatedDate": formatCreatedDate}
+var funcMap = template.FuncMap{"formatCreatedDate": utils.FormatCreatedDate}
 
 //template used in home
 var homeTemplates = template.Must(template.New("home.html").Funcs(funcMap).ParseFiles(utils.WebsiteDirectory()+"/home/home.html",
@@ -38,8 +37,10 @@ type HomeViewModel struct {
 }
 
 type QuestionsView struct {
-	Question datamodel.Question
-	IsVoted  bool
+	Question        datamodel.Question
+	IsVoted         bool
+	NumberOfAnswers int
+	IsSolved        bool
 }
 
 func HomeHandler(w http.ResponseWriter, r *http.Request) {
@@ -170,6 +171,26 @@ func listQuestion(page int, r *http.Request) ([]QuestionsView, error) {
 		question.Username = m[datamodel.FieldQuestionUsername].(string)
 		question.CreatedDate = utils.UnixTimeToTime(m[datamodel.FieldQuestionCreatedDate].(primitive.DateTime))
 
+		if m[datamodel.FieldQuestionAnswer] != nil {
+			ansArr := m[datamodel.FieldQuestionAnswer].(primitive.A)
+			for _, a := range ansArr {
+				ansDoc := a.(primitive.D)
+				ansMap := ansDoc.Map()
+
+				var ans datamodel.Answer
+				ans.ID = ansMap[datamodel.FieldAnswerID].(primitive.ObjectID).Hex()
+				if ansMap[datamodel.FieldAnswerIsGood] != nil {
+					ans.IsGood = ansMap[datamodel.FieldAnswerIsGood].(bool)
+				} else {
+					ans.IsGood = false
+				}
+
+				question.Answers = append(question.Answers, ans)
+			}
+		} else {
+			question.Answers = nil
+		}
+
 		//check if user already voted or not
 		var voted = false
 		if usr.Vote != nil {
@@ -177,9 +198,26 @@ func listQuestion(page int, r *http.Request) ([]QuestionsView, error) {
 			voted = isVoted(qObjId, usr.Vote)
 		}
 
+		//count number of answers
+		numberOfAnswers := 0
+		if question.Answers != nil {
+			numberOfAnswers = len(question.Answers)
+		}
+
+		//check if the question is solved or not
+		isSolved := false
+		for _, elmt := range question.Answers {
+			if elmt.IsGood {
+				isSolved = true
+				break
+			}
+		}
+
 		q := QuestionsView{
-			Question: question,
-			IsVoted:  voted,
+			Question:        question,
+			IsVoted:         voted,
+			NumberOfAnswers: numberOfAnswers,
+			IsSolved:        isSolved,
 		}
 		questions = append(questions, q)
 	}
@@ -291,9 +329,4 @@ func isVoted(id primitive.ObjectID, voteArr primitive.A) bool {
 		}
 	}
 	return false
-}
-
-func formatCreatedDate(t time.Time) string {
-	y, m, d := t.Date()
-	return fmt.Sprintf("%v %v %v", d, m, y)
 }

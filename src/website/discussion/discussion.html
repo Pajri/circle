@@ -19,14 +19,17 @@
                             <a href="?action=downvote&id={{.Question.ID}}"  class="fas fa-chevron-down vote-button"></a> 
                         {{end}}
                     </div>
-                    <p>2 Answers</p>
+                    <p>{{.NumOfAnswer}} Answer</p>
                     {{if .Question.IsSolved}}
                         <p class="bg-success text-white">Solved</p>
                     {{end}}
                 </div>
                 <div class="col-md-11 right">
                     <h5 class="card-title"><a href="#">{{.Question.Title}}</a></h5>
-                    <h6 class="card-subtitle mb-2 text-muted"><a href="#">{{.Question.Username}}</a></h6>
+                    <h6 class="card-subtitle mb-2 text-muted">
+                        <small>Posted on: {{.Question.CreatedDate | formatCreatedDate}}</small><br/>
+                        <a href="#">{{.Question.Username}}</a>
+                    </h6>
                     <p class="card-text">
                         {{.Question.Description}}
                     </p>
@@ -46,51 +49,38 @@
             </p>
         </div>
     </div>
-    <div class="card my-2 answer">
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-1 left">
-                    <img src="../../assets/img/man.png" alt="Man"/>
-                    <a href="#">Username</a>
-                </div>
-                <div class="col-md-11">                        
-                    <p class="card-text">
-                        Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-                        Mauris convallis, dolor eu ultrices porta, dui mi ornare
-                        mauris, rutrum ultrices tellus nisl tincidunt arcu.
-                        Nam condimentum ac ex vitae varius. Sed augue eros,
-                        luctus non nisl vitae, bibendum suscipit erat.
-                        Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-                        Nullam a mi elementum justo luctus dignissim a et nisl.
-                        Proin rutrum justo est, nec pellentesque dui scelerisque
-                        vitae.
-                    </p>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="card my-2 answer questioning">
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-1 left">
-                    <img src="../../assets/img/yellow.png" alt="Man"/>
-                    <a href="#">Username</a>
-                </div>
-                <div class="col-md-11">                        
-                    <p class="card-text">
-                        Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-                        Mauris convallis, dolor eu ultrices porta, dui mi ornare
-                        mauris, rutrum ultrices tellus nisl tincidunt arcu.
-                        Nam condimentum ac ex vitae varius. Sed augue eros,
-                        luctus non nisl vitae, bibendum suscipit erat.
-                        Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-                        Nullam a mi elementum justo luctus dignissim a et nisl.
-                        Proin rutrum justo est, nec pellentesque dui scelerisque
-                        vitae.
-                    </p>
+    {{$questionId := .Question.ID}}
+    {{$isQuestionByLoggedInUser := .IsQuestionByLoggedInUser}}
+    {{range .Question.Answers}}
+        <div class="card my-2 answer">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-1 left">
+                        <img src="../../assets/img/man.png" alt="Man"/>
+                        <a href="#">{{.Username}}</a>
+                        {{if .IsGood}}
+                            <div class="good-answer">
+                                <span class="fa fa-check btn-good-answer selected"></span>
+                            </div>
+                        {{end}}
+
+                        {{if (and $isQuestionByLoggedInUser (not .IsGood))}}
+                            <form action="/discussion/{{$questionId}}" method="POST">
+                                <button class="fa fa-check btn-good-answer" value="{{.ID}}" name="good-answer"></button>
+                            </form>
+                        {{else}}
+                           
+                        {{end}}
+                    </div>
+                    <div class="col-md-11">  
+                        <small>{{.CreatedDate | formatCreatedDate}}</small><br/>                      
+                        <p class="card-text">
+                            {{.Answer}}
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
+    {{end}}
 </div>
 {{end}}
