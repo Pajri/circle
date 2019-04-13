@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 
+	ask "./src/website/ask"
 	discussion "./src/website/discussion"
 	home "./src/website/home"
 	login "./src/website/login"
@@ -18,6 +19,7 @@ func main() {
 	http.HandleFunc("/register", register.RegisterHandler)
 	http.HandleFunc("/discussion/", discussion.DiscussionHandler)
 	http.HandleFunc("/login", login.LoginHandler)
+	http.HandleFunc("/ask", ask.AskHandler)
 
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
