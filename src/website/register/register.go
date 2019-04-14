@@ -64,9 +64,9 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = registerTemplate.ExecuteTemplate(w, "authentication.html", regView)
-
 	if err != nil {
-		log.Print("Register : ", err)
+		utils.InternalServerErrorHandler(w, r, err, "register : an error occured when executing template")
+		return
 	}
 
 }
