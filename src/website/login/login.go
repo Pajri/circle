@@ -68,9 +68,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			session.Values[utils.KEY_USERNAME] = login.Username
-			session.Values[utils.KEY_ISAUTH] = true
-			err = session.Save(r, w)
+			err = utils.Login(session, login.Username, w, r)
 			if err != nil {
 				utils.InternalServerErrorHandler(w, r, err, "login : an error occured when executing template.")
 			}

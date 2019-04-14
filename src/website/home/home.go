@@ -165,7 +165,11 @@ func listQuestion(page int, r *http.Request) ([]QuestionsView, error) {
 		var question datamodel.Question
 		question.ID = m[datamodel.FieldQuestionID].(primitive.ObjectID).Hex()
 		question.Title = m[datamodel.FieldQuestionTitle].(string)
-		question.Description = m[datamodel.FieldQuestionDescription].(string)[:100] + "..."
+		question.Description = m[datamodel.FieldQuestionDescription].(string)
+		if len(question.Description) > 100 {
+			question.Description = question.Description[:100] + "..."
+		}
+
 		question.Vote = m[datamodel.FieldQuestionVote].(int32)
 		question.IsSolved = m[datamodel.FieldQuestionIsSolved].(bool)
 		question.Username = m[datamodel.FieldQuestionUsername].(string)

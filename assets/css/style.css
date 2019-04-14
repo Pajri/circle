@@ -19,6 +19,15 @@
     text-align: center;
 }
 
+.login .btn-wrapper {
+    text-align: right;
+}
+
+.login .btn-wrapper .reg-link {
+    color: white;
+    margin-right: 5px;
+}
+
 /* END Login */
 
 /* BEGIN Navbar */

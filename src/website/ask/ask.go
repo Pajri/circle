@@ -44,7 +44,7 @@ func AskHandler(w http.ResponseWriter, r *http.Request) {
 			utils.InternalServerErrorHandler(w, r, err, "ask : an error occured while inserting document")
 			return
 		} else {
-			http.Redirect(w, r, "/home", http.StatusTemporaryRedirect)
+			http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		}
 	}
 

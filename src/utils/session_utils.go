@@ -34,9 +34,9 @@ func GetSession(r *http.Request, cookieName string) (*sessions.Session, error) {
 	return session, nil
 }
 
-func IsLoggedInSession(session *sessions.Session) bool {
-	isAuthenticated := session.Values[KEY_ISAUTH]
-	username := session.Values[KEY_USERNAME]
+func IsLoggedInSession(s *sessions.Session) bool {
+	isAuthenticated := s.Values[KEY_ISAUTH]
+	username := s.Values[KEY_USERNAME]
 
 	if isAuthenticated == nil && username == nil {
 		return false
@@ -57,4 +57,21 @@ func GetUsernameFromSession(r *http.Request) (string, error) {
 	}
 	username := session.Values[KEY_USERNAME].(string)
 	return username, nil
+}
+
+func Login(s *sessions.Session, username string, w http.ResponseWriter, r *http.Request) error {
+	s.Values[KEY_USERNAME] = username
+	s.Values[KEY_ISAUTH] = true
+	err := session.Save(r, w)
+	return err
+}
+
+func Logout(w http.ResponseWriter, r *http.Request) error {
+	if IsLoggedInSession(session) {
+		session.Values[KEY_USERNAME] = ""
+		session.Values[KEY_ISAUTH] = false
+		err := session.Save(r, w)
+		return err
+	}
+	return nil
 }

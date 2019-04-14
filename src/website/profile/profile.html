@@ -1,0 +1,25 @@
+{{define "content"}}
+    <div class="container">
+        <h3>Profile</h3>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="row">
+                    <div class="col-md-6">
+                        <strong>Username</strong>
+                    </div>
+                    <div class="col-md-6">
+                        {{.Username}}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <strong>E-mail</strong>
+                    </div>
+                    <div class="col-md-6">
+                        {{.Email}}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{{end}}

@@ -31,7 +31,7 @@
                     <h5 class="card-title"><a href="/discussion/{{.Question.ID}}">{{.Question.Title}}</a></h5>
                     <h6 class="card-subtitle mb-2 text-muted">
                         <small>Posted on: {{.Question.CreatedDate | formatCreatedDate}}</small><br/>
-                        <a href="#">{{.Question.Username}}</a>
+                        <a href="/profile/{{.Question.Username}}">{{.Question.Username}}</a>
                     </h6>
                     <p class="card-text">
                         {{.Question.Description}}
