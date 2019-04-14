@@ -18,7 +18,7 @@ import (
 var ctx context.Context
 var db *mongo.Database
 
-type RegisterViewModel struct {
+type RegisterView struct {
 	IsError      bool
 	ErrorMessage string
 }
@@ -29,14 +29,17 @@ var registerTemplate = template.Must(template.ParseFiles(utils.WebsiteDirectory(
 
 func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	err := Init()
+	if err != nil {
+		utils.InternalServerErrorHandler(w, r, err, "register : an error occured when initializing register")
+		return
+	}
 
-	RegisterData := RegisterViewModel{
+	regView := RegisterView{
 		IsError:      false,
 		ErrorMessage: "",
 	}
 
 	if r.Method == "POST" {
-
 		var taken, passSame bool
 		taken, err = isUserTaken(r.FormValue("username"))
 		passSame = isPasswordSame(r)
@@ -45,19 +48,22 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 			err = register(w, r)
 			if err == nil {
 				http.Redirect(w, r, "/login?register=success", 302)
+			}else{
+				utils.InternalServerErrorHandler(w, r, err, "register : an error occured when registering user")
+				return
 			}
 		} else {
 			if taken {
-				RegisterData.IsError = true
-				RegisterData.ErrorMessage = "Username is already taken"
+				regView.IsError = true
+				regView.ErrorMessage = "Username is already taken"
 			} else if !passSame {
-				RegisterData.IsError = true
-				RegisterData.ErrorMessage = "Password does not match"
+				regView.IsError = true
+				regView.ErrorMessage = "Password does not match"
 			}
 		}
 	}
 
-	err = registerTemplate.ExecuteTemplate(w, "authentication.html", RegisterData)
+	err = registerTemplate.ExecuteTemplate(w, "authentication.html", regView)
 
 	if err != nil {
 		log.Print("Register : ", err)
@@ -71,12 +77,9 @@ func Init() error {
 	ctx = context.TODO()
 
 	//INIT DATABASE
-	dbInit, err := utils.ConnectDb(ctx)
-	if err != nil {
-		return fmt.Errorf("An error occured on config db: %v", err)
-	}
-	db = dbInit
-	return nil
+	var err error
+	db, err = utils.ConnectDb(ctx)
+	return err
 }
 
 func register(w http.ResponseWriter, r *http.Request) error {
@@ -84,18 +87,8 @@ func register(w http.ResponseWriter, r *http.Request) error {
 		return nil
 	}
 
-	var err error
-	user := populateUser(r)
-	if err != nil {
-		return err
-	}
-
-	err = insertUser(user)
-	if err != nil {
-		return fmt.Errorf("User couldn't be created: %v", err)
-	}
+	err := insertUser(r)
 	return err
-
 }
 
 func isUserTaken(username string) (bool, error) {
@@ -104,7 +97,7 @@ func isUserTaken(username string) (bool, error) {
 	userFound, err := db.Collection(datamodel.CollUser).Find(ctx, bson.D{{datamodel.FieldUserUsername, username}}, findOptions)
 
 	if err != nil {
-		return false, fmt.Errorf("An error occured while checking user taken: %v", err)
+		return false, err
 	}
 
 	return userFound.Next(ctx), nil
@@ -117,22 +110,12 @@ func isPasswordSame(r *http.Request) bool {
 	return false
 }
 
-func insertUser(user datamodel.User) error {
+func insertUser(r *http.Request) error {
 	_, err := db.Collection(datamodel.CollUser).InsertOne(ctx, bson.D{
-		{datamodel.FieldUserUsername, user.Username},
-		{datamodel.FieldUserEmail, user.Email},
-		{datamodel.FieldPassword, user.Password},
+		{datamodel.FieldUserUsername, r.FormValue("username")},
+		{datamodel.FieldUserEmail, r.FormValue("email"),
+		{datamodel.FieldPassword, utils.HashSha1(r.FormValue("password")},
 	})
 
 	return err
-}
-
-func populateUser(r *http.Request) datamodel.User {
-	user := datamodel.User{
-		Username: r.FormValue("username"),
-		Email:    r.FormValue("email"),
-		Password: utils.HashSha1(r.FormValue("password")),
-	}
-
-	return user
 }
