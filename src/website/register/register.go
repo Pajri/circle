@@ -2,9 +2,7 @@ package register
 
 import (
 	"context"
-	"fmt"
 	"html/template"
-	"log"
 	"net/http"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -48,7 +46,7 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 			err = register(w, r)
 			if err == nil {
 				http.Redirect(w, r, "/login?register=success", 302)
-			}else{
+			} else {
 				utils.InternalServerErrorHandler(w, r, err, "register : an error occured when registering user")
 				return
 			}
@@ -113,8 +111,8 @@ func isPasswordSame(r *http.Request) bool {
 func insertUser(r *http.Request) error {
 	_, err := db.Collection(datamodel.CollUser).InsertOne(ctx, bson.D{
 		{datamodel.FieldUserUsername, r.FormValue("username")},
-		{datamodel.FieldUserEmail, r.FormValue("email"),
-		{datamodel.FieldPassword, utils.HashSha1(r.FormValue("password")},
+		{datamodel.FieldUserEmail, r.FormValue("email")},
+		{datamodel.FieldPassword, utils.HashSha1(r.FormValue("password"))},
 	})
 
 	return err
