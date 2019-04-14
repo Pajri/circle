@@ -61,7 +61,6 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if isAuth {
-			http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 			session, err := utils.GetSession(r, utils.SESSION_AUTH)
 			if err != nil {
 				utils.InternalServerErrorHandler(w, r, err, "login : an error occured when retrieving sessions.")
@@ -73,6 +72,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 				utils.InternalServerErrorHandler(w, r, err, "login : an error occured when executing template.")
 				return
 			}
+			http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		} else {
 			LoginMessage = createErrorMessage("Invalid username or password")
 		}
