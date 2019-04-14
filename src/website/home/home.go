@@ -29,8 +29,9 @@ var homeTemplates = template.Must(template.New("home.html").Funcs(funcMap).Parse
 
 var db *mongo.Database
 var ctx context.Context
+var s *sessions.Session
 
-type HomeViewModel struct {
+type HomeView struct {
 	Questions   []QuestionsView
 	CurrentPage int
 	PageIndex   []int
@@ -46,7 +47,7 @@ type QuestionsView struct {
 func HomeHandler(w http.ResponseWriter, r *http.Request) {
 	var err error
 	var session *sessions.Session
-	homeViewModel := HomeViewModel{
+	homeView := HomeView{
 		Questions:   nil,
 		CurrentPage: 1,
 		PageIndex:   nil,
@@ -65,7 +66,7 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//init home
-	err = initHome()
+	err = initHome(r)
 	if err != nil {
 		utils.InternalServerErrorHandler(w, r, err, "home : an error occured when executing templates")
 		return
@@ -88,7 +89,7 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 				utils.InternalServerErrorHandler(w, r, err, "home : an error occured when casting page num")
 				return
 			}
-			homeViewModel.CurrentPage = int(cur)
+			homeView.CurrentPage = int(cur)
 		}
 	}
 
@@ -99,32 +100,40 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	pagesCount := int(math.Ceil(float64(count) / 5))
-	homeViewModel.PageIndex = make([]int, pagesCount)
+	homeView.PageIndex = make([]int, pagesCount)
 	for i := 0; i < int(pagesCount); i++ {
-		homeViewModel.PageIndex[i] = i + 1
+		homeView.PageIndex[i] = i + 1
 	}
 
 	vote(r)
 
-	homeViewModel.Questions, err = listQuestion(homeViewModel.CurrentPage, r)
+	homeView.Questions, err = listQuestion(homeView.CurrentPage, r)
 	if err != nil {
 		utils.InternalServerErrorHandler(w, r, err, "home : an error occured when load list question")
 		return
 	}
 
-	err = homeTemplates.ExecuteTemplate(w, "main.html", homeViewModel)
+	err = homeTemplates.ExecuteTemplate(w, "main.html", homeView)
 	if err != nil {
 		utils.InternalServerErrorHandler(w, r, err, "home : an error occured when executing templates")
 		return
 	}
 }
 
-func initHome() error {
+func initHome(r *http.Request) error {
 	var err error
 
-	ctx := context.TODO()
-	db, err = utils.ConnectDb(ctx)
-	return err
+	ctx := context.TODO()          //init context
+	db, err = utils.ConnectDb(ctx) //init db
+	if err != nil {
+		return err
+	}
+
+	s, err = utils.GetSession(r, utils.SESSION_AUTH) //init session
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func listQuestion(page int, r *http.Request) ([]QuestionsView, error) {
@@ -145,10 +154,7 @@ func listQuestion(page int, r *http.Request) ([]QuestionsView, error) {
 	defer c.Close(ctx)
 
 	var username string
-	username, err = utils.GetUsernameFromSession(r)
-	if err != nil {
-		return nil, err
-	}
+	username = utils.GetUsernameFromSession(s, r)
 
 	var usr datamodel.User
 	usr, err = getUser(username)
@@ -289,10 +295,7 @@ func vote(r *http.Request) error {
 	//add voted question to user
 	//get username from session
 	var username string
-	username, err = utils.GetUsernameFromSession(r)
-	if err != nil {
-		return err
-	}
+	username = utils.GetUsernameFromSession(s, r)
 
 	//get user from database
 	usnameDoc := bson.D{{datamodel.FieldUserUsername, username}} //username doc for filtering

@@ -27,7 +27,6 @@ var ctx context.Context
 
 func initLogin() error {
 	var err error
-
 	ctx := context.TODO()
 	db, err = utils.ConnectDb(ctx)
 	return err
@@ -48,6 +47,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 	param, ok := r.URL.Query()["register"]
 	if ok && param[0] == "success" {
+		//request was redirected from register page.
 		LoginMessage = createSuccessMessage("Registration successful")
 	}
 
@@ -61,7 +61,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if isAuth {
-			http.Redirect(w, r, "/home", http.StatusTemporaryRedirect)
+			http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 			session, err := utils.GetSession(r, utils.SESSION_AUTH)
 			if err != nil {
 				utils.InternalServerErrorHandler(w, r, err, "login : an error occured when retrieving sessions.")
@@ -71,6 +71,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 			err = utils.Login(session, login.Username, w, r)
 			if err != nil {
 				utils.InternalServerErrorHandler(w, r, err, "login : an error occured when executing template.")
+				return
 			}
 		} else {
 			LoginMessage = createErrorMessage("Invalid username or password")
@@ -93,15 +94,15 @@ func populateLogin(r *http.Request) datamodel.User {
 }
 
 func authenticate(login datamodel.User) (bool, error) {
-	bsonLogin := bson.D{
+	loginDoc := bson.D{
 		{datamodel.FieldUserUsername, login.Username},
 		{datamodel.FieldPassword, login.Password},
 	}
 
 	//get single document
 	opt := options.Find()
-	opt = opt.SetLimit(1)
-	usrCur, err := db.Collection(datamodel.CollUser).Find(ctx, bsonLogin, opt) //get cursor and error
+	opt = opt.SetLimit(1)                                                     //take only one result
+	usrCur, err := db.Collection(datamodel.CollUser).Find(ctx, loginDoc, opt) //get cursor and error
 
 	if err != nil {
 		return false, err

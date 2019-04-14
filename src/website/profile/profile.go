@@ -6,6 +6,8 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/gorilla/sessions"
+
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -19,6 +21,7 @@ var profileTemplate = template.Must(template.ParseFiles(utils.WebsiteDirectory()
 	utils.WebsiteDirectory()+"/layout/main.html"))
 var ctx context.Context
 var db *mongo.Database
+var s *sessions.Session
 
 func ProfileHandler(w http.ResponseWriter, r *http.Request) {
 	err := initProfile(r)
@@ -30,11 +33,7 @@ func ProfileHandler(w http.ResponseWriter, r *http.Request) {
 	var usName string
 	usName = getUsernameFromUrl(r)
 	if usName == "" {
-		usName, err = utils.GetUsernameFromSession(r)
-		if err != nil {
-			utils.InternalServerErrorHandler(w, r, err, "profile : an error occured when getting username from session")
-			return
-		}
+		usName = utils.GetUsernameFromSession(s, r)
 	}
 
 	var usr datamodel.User
@@ -54,8 +53,17 @@ func ProfileHandler(w http.ResponseWriter, r *http.Request) {
 
 func initProfile(r *http.Request) error {
 	var err error
-	ctx = context.TODO()
-	db, err = utils.ConnectDb(ctx)
+	ctx = context.TODO()           //init context
+	db, err = utils.ConnectDb(ctx) //init db
+	if err != nil {
+		return err
+	}
+
+	s, err = utils.GetSession(r, utils.SESSION_AUTH) //init session
+	if err != nil {
+		return err
+	}
+
 	return err
 }
 

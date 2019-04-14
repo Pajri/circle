@@ -8,6 +8,8 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/gorilla/sessions"
+
 	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -24,6 +26,7 @@ var discussionTemplate = template.Must(template.New("discussion.html").Funcs(fun
 var db *mongo.Database
 var ctx context.Context
 var questionId primitive.ObjectID
+var s *sessions.Session
 
 type DiscussionView struct {
 	Question                 datamodel.Question
@@ -73,11 +76,7 @@ func DiscussionHandler(w http.ResponseWriter, r *http.Request) {
 
 	if !voted {
 		var usname string
-		usname, err = utils.GetUsernameFromSession(r)
-		if err != nil {
-			utils.InternalServerErrorHandler(w, r, err, "discussion : an error occured when get username from session")
-			return
-		}
+		usname = utils.GetUsernameFromSession(s, r)
 
 		var usr datamodel.User
 		usr, err = getUser(usname)
@@ -97,11 +96,8 @@ func DiscussionHandler(w http.ResponseWriter, r *http.Request) {
 
 	//should show solve button or not
 	var loggedInUser string
-	loggedInUser, err = utils.GetUsernameFromSession(r)
-	if err != nil {
-		utils.InternalServerErrorHandler(w, r, err, "discussion : an error occured when get username from session")
-		return
-	}
+	loggedInUser = utils.GetUsernameFromSession(s, r)
+
 	dView.IsQuestionByLoggedInUser = false
 	if loggedInUser == dView.Question.Username {
 		dView.IsQuestionByLoggedInUser = true
@@ -128,19 +124,22 @@ func initDiscussion(r *http.Request) error {
 	if err != nil {
 		return err
 	}
+
+	s, err = utils.GetSession(r, utils.SESSION_AUTH) //init session
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
 func answer(r *http.Request) error {
+	var err error
 	ans := r.FormValue("answer")
 	if ans == "" { //the post request is not for answering question
 		return nil
 	}
 
-	usname, err := utils.GetUsernameFromSession(r)
-	if err != nil {
-		return err
-	}
+	usname := utils.GetUsernameFromSession(s, r)
 
 	var q datamodel.Question
 	q, err = getQuestion()
@@ -314,10 +313,7 @@ func vote(r *http.Request) (bool, error) {
 	//add voted question to user
 	//get username from session
 	var username string
-	username, err = utils.GetUsernameFromSession(r)
-	if err != nil {
-		return false, err
-	}
+	username = utils.GetUsernameFromSession(s, r)
 
 	//get user from database
 	usnameDoc := bson.D{{datamodel.FieldUserUsername, username}} //username doc for filtering

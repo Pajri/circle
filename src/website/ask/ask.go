@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gorilla/sessions"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
@@ -20,6 +22,7 @@ var askTemplate = template.Must(template.ParseFiles(utils.WebsiteDirectory()+"/a
 
 var ctx context.Context
 var db *mongo.Database
+var s *sessions.Session
 
 func AskHandler(w http.ResponseWriter, r *http.Request) {
 	var err error
@@ -33,11 +36,7 @@ func AskHandler(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == "POST" {
 		var qDoc primitive.D
-		qDoc, err = createQuestionDoc(r)
-		if err != nil {
-			utils.InternalServerErrorHandler(w, r, err, "ask : an error occured while populating question")
-			return
-		}
+		qDoc = createQuestionDoc(r)
 
 		err = insertQuestion(qDoc)
 		if err != nil {
@@ -57,19 +56,25 @@ func AskHandler(w http.ResponseWriter, r *http.Request) {
 
 func initAsk(r *http.Request) error {
 	var err error
-	ctx := context.TODO()
-	db, err = utils.ConnectDb(ctx)
+	ctx := context.TODO()          //init context
+	db, err = utils.ConnectDb(ctx) //init db
+	if err != nil {
+		return err
+	}
+
+	s, err = utils.GetSession(r, utils.SESSION_AUTH) //init session
+	if err != nil {
+		return err
+	}
 	return err
 }
 
-func createQuestionDoc(r *http.Request) (bson.D, error) {
+func createQuestionDoc(r *http.Request) bson.D {
 	t := r.FormValue("title")
 	qTxt := r.FormValue("question")
-	usname, err := utils.GetUsernameFromSession(r)
-	if err != nil {
-		return nil, err
-	}
 
+	var usname string
+	usname = utils.GetUsernameFromSession(s, r)
 	qDoc := bson.D{
 		{datamodel.FieldQuestionID, primitive.NewObjectID()},
 		{datamodel.FieldQuestionTitle, t},
@@ -80,7 +85,7 @@ func createQuestionDoc(r *http.Request) (bson.D, error) {
 		{datamodel.FieldQuestionCreatedDate, primitive.DateTime(utils.TimeToMillis(time.Now()))},
 	}
 
-	return qDoc, nil
+	return qDoc
 }
 
 func insertQuestion(qDoc bson.D) error {

@@ -48,15 +48,11 @@ func IsLoggedInSession(s *sessions.Session) bool {
 	return false
 }
 
-func GetUsernameFromSession(r *http.Request) (string, error) {
-	var session *sessions.Session
-	var err error
-	session, err = GetSession(r, SESSION_AUTH)
-	if err != nil {
-		return "", err
+func GetUsernameFromSession(s *sessions.Session, r *http.Request) string {
+	if s.Values[KEY_USERNAME] == nil {
+		return ""
 	}
-	username := session.Values[KEY_USERNAME].(string)
-	return username, nil
+	return s.Values[KEY_USERNAME].(string)
 }
 
 func Login(s *sessions.Session, username string, w http.ResponseWriter, r *http.Request) error {
