@@ -38,7 +38,20 @@ type DiscussionView struct {
 func DiscussionHandler(w http.ResponseWriter, r *http.Request) {
 	err := initDiscussion(r)
 	if err != nil {
-		utils.InternalServerErrorHandler(w, r, err, "discussion : an error occured when retrieving question from url")
+		utils.InternalServerErrorHandler(w, r, err, "discussion : an error occured when initializing discussion")
+		return
+	}
+
+	//check is logged in
+	isAuth := utils.IsLoggedInSession(s)
+	if !isAuth {
+		utils.ForbiddenHandler(w, r)
+		return
+	}
+
+	questionId, err = getQuestionIdFromUrl(r)
+	if err != nil {
+		utils.InternalServerErrorHandler(w, r, err, "discussion : an error occured when getting question from url")
 		return
 	}
 
@@ -109,6 +122,7 @@ func DiscussionHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	db.Client().Disconnect(ctx)
 }
 
 func initDiscussion(r *http.Request) error {
@@ -116,11 +130,6 @@ func initDiscussion(r *http.Request) error {
 
 	ctx := context.TODO()
 	db, err = utils.ConnectDb(ctx)
-	if err != nil {
-		return err
-	}
-
-	questionId, err = getQuestionIdFromUrl(r)
 	if err != nil {
 		return err
 	}
@@ -164,9 +173,9 @@ func answer(r *http.Request) error {
 				{datamodel.FieldAnswerUsername, ans.Username},
 				{datamodel.FieldAnswerCreatedDate, primitive.DateTime(utils.TimeToMillis(ans.CreatedDate))},
 			}
-			answersArr = append(answersArr, ansDoc)
+			answersArr = append(answersArr, ansDoc) //list stored answer
 		}
-		answersArr = append(answersArr, newAnsDoc)
+		answersArr = append(answersArr, newAnsDoc) //add new answer
 	} else {
 		answersArr = append(answersArr, newAnsDoc)
 	}

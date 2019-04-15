@@ -69,9 +69,10 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 			err = utils.Login(session, login.Username, w, r)
 			if err != nil {
-				utils.InternalServerErrorHandler(w, r, err, "login : an error occured when executing template.")
+				utils.InternalServerErrorHandler(w, r, err, "login : an error occured when logging in.")
 				return
 			}
+
 			http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		} else {
 			LoginMessage = createErrorMessage("Invalid username or password")

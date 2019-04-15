@@ -34,6 +34,13 @@ func AskHandler(w http.ResponseWriter, r *http.Request) {
 
 	}
 
+	//check is logged in
+	isAuth := utils.IsLoggedInSession(s)
+	if !isAuth {
+		utils.ForbiddenHandler(w, r)
+		return
+	}
+
 	if r.Method == "POST" {
 		var qDoc primitive.D
 		qDoc = createQuestionDoc(r)
@@ -52,6 +59,8 @@ func AskHandler(w http.ResponseWriter, r *http.Request) {
 		utils.InternalServerErrorHandler(w, r, err, "ask : an error occured when executing template")
 		return
 	}
+
+	db.Client().Disconnect(ctx)
 }
 
 func initAsk(r *http.Request) error {

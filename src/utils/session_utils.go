@@ -62,10 +62,10 @@ func Login(s *sessions.Session, username string, w http.ResponseWriter, r *http.
 	return err
 }
 
-func Logout(w http.ResponseWriter, r *http.Request) error {
-	if IsLoggedInSession(session) {
-		session.Values[KEY_USERNAME] = ""
-		session.Values[KEY_ISAUTH] = false
+func Logout(s *sessions.Session, w http.ResponseWriter, r *http.Request) error {
+	if IsLoggedInSession(s) {
+		s.Values[KEY_USERNAME] = ""
+		s.Values[KEY_ISAUTH] = false
 		err := session.Save(r, w)
 		return err
 	}

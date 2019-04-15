@@ -46,23 +46,10 @@ type QuestionsView struct {
 
 func HomeHandler(w http.ResponseWriter, r *http.Request) {
 	var err error
-	var session *sessions.Session
 	homeView := HomeView{
 		Questions:   nil,
 		CurrentPage: 1,
 		PageIndex:   nil,
-	}
-
-	val := r.FormValue("vote")
-	if val != "" {
-		fmt.Println("val : ", val)
-	}
-
-	//process session
-	session, err = utils.GetSession(r, utils.SESSION_AUTH)
-	if err != nil {
-		utils.InternalServerErrorHandler(w, r, err, "home : an error occured when executing templates")
-		return
 	}
 
 	//init home
@@ -73,36 +60,15 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//check is logged in
-	isAuth := utils.IsLoggedInSession(session)
+	isAuth := utils.IsLoggedInSession(s)
 	if !isAuth {
 		utils.ForbiddenHandler(w, r)
 		return
 	}
 
-	//get page for pagination
-	splitUrl := strings.Split(r.URL.Path, "/")
-	if len(splitUrl) == 4 { // the url like /home/page/3, the first element is empty string : [,home,page,3]
-		if splitUrl[2] == "page" {
-			var cur int64
-			cur, err = strconv.ParseInt(splitUrl[3], 10, 64)
-			if err != nil {
-				utils.InternalServerErrorHandler(w, r, err, "home : an error occured when casting page num")
-				return
-			}
-			homeView.CurrentPage = int(cur)
-		}
-	}
-
-	count := int64(0)
-	count, err = db.Collection(datamodel.CollQuestion).CountDocuments(ctx, bson.D{}, nil)
+	homeView.CurrentPage, homeView.PageIndex, err = createPagination(r)
 	if err != nil {
-		utils.InternalServerErrorHandler(w, r, err, "home : an error occured when counting documents")
-		return
-	}
-	pagesCount := int(math.Ceil(float64(count) / 5))
-	homeView.PageIndex = make([]int, pagesCount)
-	for i := 0; i < int(pagesCount); i++ {
-		homeView.PageIndex[i] = i + 1
+		utils.InternalServerErrorHandler(w, r, err, "home : an error occured while crating pagination")
 	}
 
 	vote(r)
@@ -118,6 +84,8 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 		utils.InternalServerErrorHandler(w, r, err, "home : an error occured when executing templates")
 		return
 	}
+
+	db.Client().Disconnect(ctx)
 }
 
 func initHome(r *http.Request) error {
@@ -141,10 +109,11 @@ func listQuestion(page int, r *http.Request) ([]QuestionsView, error) {
 		page = page - 1
 	}
 
+	//limit only 5 item per page
 	opt := options.Find()
 	limit := 5
 	opt.SetLimit(int64(limit))
-	opt.SetSort(bson.D{{datamodel.FieldQuestionCreatedDate, -1}})
+	opt.SetSort(bson.D{{datamodel.FieldQuestionCreatedDate, -1}}) //sort by date descending
 	opt.SetSkip(int64(page * limit))
 
 	c, err := db.Collection(datamodel.CollQuestion).Find(ctx, bson.D{}, opt)
@@ -153,8 +122,7 @@ func listQuestion(page int, r *http.Request) ([]QuestionsView, error) {
 	}
 	defer c.Close(ctx)
 
-	var username string
-	username = utils.GetUsernameFromSession(s, r)
+	username := utils.GetUsernameFromSession(s, r)
 
 	var usr datamodel.User
 	usr, err = getUser(username)
@@ -164,10 +132,10 @@ func listQuestion(page int, r *http.Request) ([]QuestionsView, error) {
 
 	var questions []QuestionsView
 	for c.Next(ctx) {
+		//get question
 		doc := &bson.D{}
 		c.Decode(doc)
 		m := doc.Map()
-
 		var question datamodel.Question
 		question.ID = m[datamodel.FieldQuestionID].(primitive.ObjectID).Hex()
 		question.Title = m[datamodel.FieldQuestionTitle].(string)
@@ -336,4 +304,35 @@ func isVoted(id primitive.ObjectID, voteArr primitive.A) bool {
 		}
 	}
 	return false
+}
+
+func createPagination(r *http.Request) (int, []int, error) {
+	var err error
+	var curInt int
+	//get page for pagination
+	splitUrl := strings.Split(r.URL.Path, "/")
+	if len(splitUrl) == 4 { // the url like /home/page/3, the first element is empty string : [,home,page,3]
+		if splitUrl[2] == "page" {
+			var cur int64
+			cur, err = strconv.ParseInt(splitUrl[3], 10, 64)
+			if err != nil {
+				return 0, nil, err
+			}
+			curInt = int(cur)
+		}
+	}
+
+	count := int64(0)
+	count, err = db.Collection(datamodel.CollQuestion).CountDocuments(ctx, bson.D{}, nil)
+	if err != nil {
+		return 0, nil, err
+	}
+
+	pagesCount := int(math.Ceil(float64(count) / 5))
+	pageIdx := make([]int, pagesCount)
+	for i := 0; i < int(pagesCount); i++ {
+		pageIdx[i] = i + 1
+	}
+
+	return curInt, pageIdx, nil
 }

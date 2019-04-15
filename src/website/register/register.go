@@ -26,7 +26,7 @@ var registerTemplate = template.Must(template.ParseFiles(utils.WebsiteDirectory(
 	utils.WebsiteDirectory()+"/layout/authentication.html"))
 
 func RegisterHandler(w http.ResponseWriter, r *http.Request) {
-	err := Init()
+	err := initRegister()
 	if err != nil {
 		utils.InternalServerErrorHandler(w, r, err, "register : an error occured when initializing register")
 		return
@@ -67,9 +67,10 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	db.Client().Disconnect(ctx)
 }
 
-func Init() error {
+func initRegister() error {
 	//INIT CONTEXT
 	//TODO need to understand what ctx is and how to use it
 	ctx = context.TODO()

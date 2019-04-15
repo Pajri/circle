@@ -7,7 +7,19 @@ import (
 )
 
 func LogoutHandler(w http.ResponseWriter, r *http.Request) {
-	err := utils.Logout(w, r)
+	s, err := utils.GetSession(r, utils.SESSION_AUTH) //init session
+	if err != nil {
+		utils.InternalServerErrorHandler(w, r, err, "logout : an error occured when getting session.")
+		return
+	}
+
+	//check is logged in
+	isAuth := utils.IsLoggedInSession(s)
+	if !isAuth {
+		http.Redirect(w, r, "/login", http.StatusTemporaryRedirect)
+	}
+
+	err = utils.Logout(s, w, r)
 	if err != nil {
 		utils.InternalServerErrorHandler(w, r, err, "logout : an error occured when logging out.")
 		return

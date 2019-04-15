@@ -49,6 +49,8 @@ func ProfileHandler(w http.ResponseWriter, r *http.Request) {
 		utils.InternalServerErrorHandler(w, r, err, "profile : an error occured when executing templates")
 		return
 	}
+
+	db.Client().Disconnect(ctx)
 }
 
 func initProfile(r *http.Request) error {
