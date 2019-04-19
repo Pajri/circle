@@ -10,11 +10,13 @@ var FieldUserUsername = "username"
 var FieldUserEmail = "email"
 var FieldPassword = "password"
 var FieldUserVote = "vote"
+var FieldUserImageName = "imageUrl"
 
 type User struct {
-	ID       string
-	Username string
-	Email    string
-	Password string
-	Vote     primitive.A
+	ID        string
+	Username  string
+	Email     string
+	Password  string
+	Vote      primitive.A
+	ImageName string
 }

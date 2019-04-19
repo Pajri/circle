@@ -14,4 +14,5 @@ type Answer struct {
 	Username    string
 	IsGood      bool
 	CreatedDate time.Time
+	ImageUrl    string
 }

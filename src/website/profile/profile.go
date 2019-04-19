@@ -90,6 +90,7 @@ func getUser(username string) (datamodel.User, error) {
 	usr.ID = usrMap[datamodel.FieldUserID].(primitive.ObjectID).Hex()
 	usr.Username = usrMap[datamodel.FieldUserUsername].(string)
 	usr.Email = usrMap[datamodel.FieldUserEmail].(string)
+	usr.ImageName = utils.USER_IMAGE_URL + "/" + usrMap[datamodel.FieldUserImageName].(string)
 
 	return usr, nil
 }

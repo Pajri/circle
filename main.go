@@ -14,8 +14,13 @@ import (
 )
 
 func main() {
+	//handle static asset files
 	assetsDir := http.FileServer(http.Dir("assets"))
 	http.Handle("/assets/", http.StripPrefix("/assets/", assetsDir))
+
+	//handle uploaded files
+	fileUpdload := http.FileServer(http.Dir("upload"))
+	http.Handle("/upload/", http.StripPrefix("/upload/", fileUpdload))
 
 	http.HandleFunc("/", home.HomeHandler)
 	http.HandleFunc("/register", register.RegisterHandler)

@@ -3,7 +3,10 @@ package register
 import (
 	"context"
 	"html/template"
+	"io"
 	"net/http"
+	"os"
+	"path/filepath"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -110,11 +113,40 @@ func isPasswordSame(r *http.Request) bool {
 }
 
 func insertUser(r *http.Request) error {
-	_, err := db.Collection(datamodel.CollUser).InsertOne(ctx, bson.D{
+	img, err := uploadImage(r)
+	if err != nil {
+		return err
+	}
+
+	_, err = db.Collection(datamodel.CollUser).InsertOne(ctx, bson.D{
 		{datamodel.FieldUserUsername, r.FormValue("username")},
 		{datamodel.FieldUserEmail, r.FormValue("email")},
 		{datamodel.FieldPassword, utils.HashSha1(r.FormValue("password"))},
+		{datamodel.FieldUserImageName, img},
 	})
 
 	return err
+}
+
+func uploadImage(r *http.Request) (string, error) {
+	f, h, err := r.FormFile("image") //get submitted image
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+
+	var imgFile *os.File
+	usname := r.FormValue("username")
+	filename := usname + filepath.Ext(h.Filename)                                       //create filename
+	imgFile, err = os.Create(utils.WorkingDirectory() + "/upload/userdata/" + filename) //upload file
+	if err != nil {
+		return "", err
+	}
+	defer imgFile.Close()
+
+	_, err = io.Copy(imgFile, f)
+	if err != nil {
+		return "", err
+	}
+	return filename, nil
 }

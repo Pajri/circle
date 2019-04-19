@@ -244,6 +244,15 @@ func getQuestion() (datamodel.Question, error) {
 				ans.IsGood = false
 			}
 
+			var usr datamodel.User
+			usr, err = getUser(ans.Username)
+			if err != nil {
+				return datamodel.Question{}, err
+			}
+			if usr.ImageName != "" {
+				ans.ImageUrl = utils.USER_IMAGE_URL + "/" + usr.ImageName
+			}
+
 			q.Answers = append(q.Answers, ans)
 		}
 	} else {
@@ -272,6 +281,11 @@ func getUser(username string) (datamodel.User, error) {
 	} else {
 		usr.Vote = nil
 	}
+
+	if m[datamodel.FieldUserImageName] != nil {
+		usr.ImageName = m[datamodel.FieldUserImageName].(string)
+	}
+
 	return usr, nil
 }
 
